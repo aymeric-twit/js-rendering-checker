@@ -1739,20 +1739,26 @@ function ouvrirDetailBulk(jobId, urlHash, url) {
                 content.innerHTML = '<div class="alert alert-danger">' + escapeHtml(data.error) + '</div>';
                 return;
             }
-            // Reutiliser le rendu single-URL existant
-            content.innerHTML = '<div id="bulkSingleResult"></div>';
-            // Afficher un resume simplifie
+
+            // Stocker les details pour que la modale puisse y acceder
+            detailsComplets = data;
+
+            // Tableau avec bouton oeil (meme pattern que le mode single)
             var html = '<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr>'
-                + '<th>' + t('table.zone') + '</th><th>' + t('table.html_brut') + '</th><th>' + t('table.html_rendu') + '</th><th>' + t('table.statut') + '</th><th>' + t('table.risque') + '</th></tr></thead><tbody>';
+                + '<th>' + t('table.zone') + '</th><th>' + t('table.html_brut') + '</th><th>' + t('table.html_rendu') + '</th><th>' + t('table.statut') + '</th><th>' + t('table.risque') + '</th><th style="width:50px;"></th></tr></thead><tbody id="tbodyBulkDetail">';
             if (data.comparaison) {
                 ZONES_ORDRE.forEach(function (zone) {
                     var c = data.comparaison[zone];
                     if (!c) return;
+                    var btnDetail = (c.statut !== 'absent' && c.statut !== 'identique')
+                        ? '<button class="btn-detail" data-zone="' + zone + '" title="' + t('detail.voir') + '"><i class="bi bi-eye"></i></button>'
+                        : '';
                     html += '<tr><td class="fw-600">' + t('zone.' + zone) + '</td>'
                         + '<td class="valeur-texte">' + formaterValeurZone(zone, c.brut) + '</td>'
                         + '<td class="valeur-texte">' + formaterValeurZone(zone, c.rendu) + '</td>'
                         + '<td>' + badgeStatut(c.statut) + '</td>'
-                        + '<td>' + badgeRisque(c.risque) + '</td></tr>';
+                        + '<td>' + badgeRisque(c.risque) + '</td>'
+                        + '<td>' + btnDetail + '</td></tr>';
                 });
             }
             html += '</tbody></table></div>';
@@ -1769,6 +1775,17 @@ function ouvrirDetailBulk(jobId, urlHash, url) {
             }
 
             content.innerHTML = html;
+
+            // Attacher le click handler pour les boutons oeil dans le detail bulk
+            var tbodyBulkDetail = document.getElementById('tbodyBulkDetail');
+            if (tbodyBulkDetail) {
+                tbodyBulkDetail.addEventListener('click', function (e) {
+                    var btn = e.target.closest('.btn-detail');
+                    if (!btn) return;
+                    var zone = btn.getAttribute('data-zone');
+                    ouvrirModalDetail(zone);
+                });
+            }
         })
         .catch(function (err) {
             content.innerHTML = '<div class="alert alert-danger">' + escapeHtml(err.message) + '</div>';
