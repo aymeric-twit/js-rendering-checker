@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO statique (visible dans le HTML brut) -->
+    <title>Page de test statique — Render Checker</title>
+    <meta name="description" content="Description statique presente dans le HTML brut.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://example.com/page-statique">
+
+    <!-- Open Graph statique -->
+    <meta property="og:title" content="OG Title statique">
+    <meta property="og:description" content="OG Description statique">
+
+    <!-- Hreflang statique -->
+    <link rel="alternate" hreflang="fr" href="https://example.com/fr/page">
+    <link rel="alternate" hreflang="en" href="https://example.com/en/page">
+
+    <!-- JSON-LD statique -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Page de test statique",
+        "description": "Schema present dans le HTML brut"
+    }
+    </script>
+
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #333; }
+        h1, h2, h3 { color: #004c4c; }
+        .zone { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .zone-titre { font-weight: 700; font-size: 0.85rem; color: #666; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .badge-statique { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-js { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 8px 12px; border: 1px solid #dee2e6; text-align: left; font-size: 0.9rem; }
+        th { background: #f1f5f9; }
+        a { color: #004c4c; }
+        img { max-width: 200px; border-radius: 4px; }
+        #js-indicator { color: #991b1b; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- H1 statique -->
+    <h1>Titre H1 statique de la page</h1>
+
+    <p>Cette page de test contient des elements SEO <span class="badge-statique">statiques</span> dans le HTML brut
+    et des elements <span class="badge-js">injectes par JS</span> qui n'apparaissent qu'apres execution JavaScript.</p>
+
+    <p id="js-indicator">JavaScript n'a pas ete execute.</p>
+
+    <!-- H2 statiques -->
+    <h2>Section statique : contenu present dans le HTML brut</h2>
+
+    <div class="zone">
+        <div class="zone-titre">Contenu textuel statique</div>
+        <p>Ce paragraphe est present dans le HTML brut. Google le voit immediatement au crawl.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt
+        ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.</p>
+    </div>
+
+    <!-- Liens internes statiques -->
+    <div class="zone">
+        <div class="zone-titre">Liens internes statiques</div>
+        <ul>
+            <li><a href="/page-1">Page categorie 1</a></li>
+            <li><a href="/page-2">Page categorie 2</a></li>
+            <li><a href="/page-3">Page categorie 3</a></li>
+        </ul>
+    </div>
+
+    <!-- Liens externes statiques -->
+    <div class="zone">
+        <div class="zone-titre">Liens externes statiques</div>
+        <ul>
+            <li><a href="https://external-site.com/resource" rel="nofollow">Ressource externe (nofollow)</a></li>
+        </ul>
+    </div>
+
+    <!-- Images statiques -->
+    <div class="zone">
+        <div class="zone-titre">Images statiques</div>
+        <img src="https://via.placeholder.com/200x100?text=Image+statique" alt="Image statique avec alt text">
+    </div>
+
+    <!-- Conteneur pour le contenu JS -->
+    <div id="js-content"></div>
+
+    <!-- Conteneur pour les liens JS -->
+    <div id="js-links"></div>
+
+    <!-- Conteneur pour les images JS -->
+    <div id="js-images"></div>
+
+    <!-- Tableau recapitulatif statique -->
+    <h2>Recapitulatif des zones SEO</h2>
+    <table>
+        <thead>
+            <tr><th>Zone</th><th>HTML brut</th><th>Apres JS</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Title</td><td>Page de test statique</td><td>Modifie par JS</td></tr>
+            <tr><td>Meta description</td><td>Presente</td><td>Modifiee par JS</td></tr>
+            <tr><td>Canonical</td><td>/page-statique</td><td>Modifie par JS</td></tr>
+            <tr><td>H1</td><td>Present</td><td>Modifie par JS</td></tr>
+            <tr><td>JSON-LD</td><td>1 schema (WebPage)</td><td>+1 schema (Product) ajoute par JS</td></tr>
+            <tr><td>Liens internes</td><td>3</td><td>3 + 5 ajoutes par JS</td></tr>
+            <tr><td>Images</td><td>1</td><td>1 + 1 ajoutee par JS</td></tr>
+            <tr><td>Meta robots</td><td>index, follow</td><td>Inchange</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ================================================================
+         JAVASCRIPT : modifications SEO apres execution
+         ================================================================ -->
+    <script>
+        // --- Modifier le title ---
+        document.title = 'Titre modifie par JavaScript — Render Checker';
+
+        // --- Modifier la meta description ---
+        var metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', 'Description modifiee par JavaScript avec du contenu supplementaire.');
+
+        // --- Modifier le canonical ---
+        var canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.setAttribute('href', 'https://example.com/page-modifiee-js');
+
+        // --- Modifier le H1 ---
+        var h1 = document.querySelector('h1');
+        if (h1) h1.textContent = 'Titre H1 modifie par JavaScript';
+
+        // --- Indicateur JS ---
+        var indicator = document.getElementById('js-indicator');
+        if (indicator) {
+            indicator.textContent = 'JavaScript a ete execute avec succes.';
+            indicator.style.color = '#065f46';
+        }
+
+        // --- Ajouter un JSON-LD Product ---
+        var scriptLd = document.createElement('script');
+        scriptLd.type = 'application/ld+json';
+        scriptLd.textContent = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": "Produit injecte par JS",
+            "description": "Ce schema n'existe que dans le DOM rendu",
+            "offers": {
+                "@type": "Offer",
+                "price": "29.99",
+                "priceCurrency": "EUR"
+            }
+        });
+        document.head.appendChild(scriptLd);
+
+        // --- Ajouter un H2 par JS ---
+        var jsContent = document.getElementById('js-content');
+        if (jsContent) {
+            jsContent.innerHTML = '<h2>Section ajoutee par JavaScript</h2>'
+                + '<div class="zone">'
+                + '<div class="zone-titre">Contenu injecte par JS</div>'
+                + '<p>Ce paragraphe est genere dynamiquement par JavaScript. '
+                + 'Il n\'existe pas dans le HTML brut. Google le decouvre uniquement au rendu (WRS). '
+                + 'Si le budget de rendu est sature, ce contenu peut etre indexe avec retard.</p>'
+                + '</div>';
+        }
+
+        // --- Ajouter des liens internes par JS ---
+        var jsLinks = document.getElementById('js-links');
+        if (jsLinks) {
+            jsLinks.innerHTML = '<div class="zone">'
+                + '<div class="zone-titre">Liens internes ajoutes par JS</div>'
+                + '<ul>'
+                + '<li><a href="/js-page-1">Lien JS page 1</a></li>'
+                + '<li><a href="/js-page-2">Lien JS page 2</a></li>'
+                + '<li><a href="/js-page-3">Lien JS page 3</a></li>'
+                + '<li><a href="/js-page-4">Lien JS page 4</a></li>'
+                + '<li><a href="/js-page-5">Lien JS page 5</a></li>'
+                + '</ul>'
+                + '</div>';
+        }
+
+        // --- Ajouter une image par JS ---
+        var jsImages = document.getElementById('js-images');
+        if (jsImages) {
+            jsImages.innerHTML = '<div class="zone">'
+                + '<div class="zone-titre">Image ajoutee par JS</div>'
+                + '<img src="https://via.placeholder.com/200x100?text=Image+JS" alt="Image injectee par JavaScript">'
+                + '</div>';
+        }
+
+        // --- Ajouter des meta Twitter par JS ---
+        var twitterTitle = document.createElement('meta');
+        twitterTitle.setAttribute('name', 'twitter:title');
+        twitterTitle.setAttribute('content', 'Twitter title injecte par JS');
+        document.head.appendChild(twitterTitle);
+
+        var twitterDesc = document.createElement('meta');
+        twitterDesc.setAttribute('name', 'twitter:description');
+        twitterDesc.setAttribute('content', 'Twitter description injectee par JS');
+        document.head.appendChild(twitterDesc);
+    </script>
+
+</body>
+</html>

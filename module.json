@@ -1,0 +1,17 @@
+{
+    "slug": "js-rendering-checker",
+    "name": "JS Rendering Checker",
+    "description": "Compare le HTML brut vs rendu JS pour detecter les dependances JavaScript en SEO",
+    "version": "1.0.0",
+    "icon": "bi-filetype-html",
+    "entry_point": "index.php",
+    "sort_order": 25,
+    "quota_mode": "url",
+    "default_quota": 100,
+    "display_mode": "embedded",
+    "env_keys": ["BROWSERLESS_API_KEY"],
+    "languages": ["fr", "en"],
+    "routes": [
+        { "path": "process.php", "method": "POST", "type": "stream" }
+    ]
+}

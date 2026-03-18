@@ -1,0 +1,825 @@
+/* -- Variables brand -------------------------------------------------- */
+:root {
+    --brand-dark:        #004c4c;
+    --brand-teal:        #66b2b2;
+    --brand-teal-light:  #e8f4f4;
+    --brand-gold:        #fbb03b;
+    --brand-gold-light:  #fef4e0;
+    --brand-linen:       #f2f2f2;
+    --brand-anthracite:  #333333;
+
+    --bg-body:       #f2f2f2;
+    --bg-card:       #ffffff;
+    --bg-card-alt:   #f1f5f9;
+    --border-color:  #e2e8f0;
+    --text-primary:  #0f172a;
+    --text-secondary:#475569;
+    --text-muted:    #94a3b8;
+
+    --score-high:   #22c55e;
+    --score-mid:    #f97316;
+    --score-low:    #ef4444;
+}
+
+/* -- Global ------------------------------------------------------------ */
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    background: var(--bg-body);
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.container-fluid {
+    max-width: 100%;
+}
+
+::selection {
+    background: var(--brand-teal-light);
+    color: var(--brand-dark);
+}
+
+/* -- Navbar ------------------------------------------------------------ */
+.navbar {
+    background: var(--brand-dark);
+    border-bottom: 3px solid var(--brand-gold);
+    padding: 0.75rem 0;
+}
+
+.navbar-brand {
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.navbar-brand span {
+    font-weight: 400;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.navbar-brand i {
+    margin-right: 0.25rem;
+}
+
+/* -- Cards ------------------------------------------------------------- */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 76, 76, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, rgba(102, 178, 178, 0.04) 0%, transparent 60%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
+
+.card-header h6 {
+    color: var(--brand-anthracite);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* -- Onglets ----------------------------------------------------------- */
+.nav-tabs {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: none;
+    border-bottom: 2.5px solid transparent;
+    border-radius: 6px 6px 0 0;
+    padding: 0.5rem 1rem;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--brand-dark);
+    border-bottom-color: var(--brand-teal-light);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--brand-dark);
+    font-weight: 600;
+    border-bottom-color: var(--brand-teal);
+    background: transparent;
+}
+
+/* -- Formulaire -------------------------------------------------------- */
+.form-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.form-label-sm {
+    font-size: 0.8rem;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--brand-teal);
+    box-shadow: 0 0 0 0.2rem rgba(102, 178, 178, 0.25);
+}
+
+/* -- Boutons ----------------------------------------------------------- */
+.btn-primary {
+    background: var(--brand-dark);
+    border-color: var(--brand-dark);
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.25rem;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background: #006666;
+    border-color: #006666;
+    box-shadow: 0 2px 6px rgba(0, 76, 76, 0.2);
+}
+
+.btn-outline-secondary {
+    border-radius: 6px;
+    font-size: 0.82rem;
+}
+
+/* -- KPI Cards --------------------------------------------------------- */
+.kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 76, 76, 0.06);
+}
+
+.kpi-card .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--brand-anthracite);
+    line-height: 1.2;
+}
+
+.kpi-card .kpi-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+}
+
+.kpi-card.kpi-green .kpi-value { color: var(--score-high); }
+.kpi-card.kpi-red .kpi-value { color: var(--score-low); }
+.kpi-card.kpi-teal .kpi-value { color: var(--brand-teal); }
+
+/* -- Tableau de resultats ---------------------------------------------- */
+.table {
+    font-size: 14px;
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: var(--bg-card-alt);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 0.65rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:hover {
+    background: var(--bg-card-alt);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* -- Badges statut ----------------------------------------------------- */
+.badge-identique {
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.75em;
+    border-radius: 4px;
+}
+
+.badge-modifie {
+    background: var(--brand-gold-light);
+    color: #92400e;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.75em;
+    border-radius: 4px;
+}
+
+.badge-js-seul {
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.75em;
+    border-radius: 4px;
+}
+
+.badge-supprime {
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.75em;
+    border-radius: 4px;
+}
+
+.badge-absent {
+    background: #f1f5f9;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.75em;
+    border-radius: 4px;
+}
+
+/* -- Badges risque ----------------------------------------------------- */
+.badge-risque-critique {
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+.badge-risque-haut {
+    background: var(--score-mid);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+.badge-risque-moyen {
+    background: var(--brand-gold);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+.badge-risque-faible {
+    background: var(--brand-teal);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+/* -- Recommandations --------------------------------------------------- */
+.recommandation-item {
+    padding: 0.65rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.recommandation-item:last-child {
+    margin-bottom: 0;
+}
+
+.recommandation-critique {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.recommandation-haut {
+    background: var(--brand-gold-light);
+    color: #92400e;
+    border-left: 4px solid var(--brand-gold);
+}
+
+.recommandation-moyen {
+    background: var(--brand-teal-light);
+    color: var(--brand-dark);
+    border-left: 4px solid var(--brand-teal);
+}
+
+.recommandation-faible {
+    background: var(--bg-card-alt);
+    color: var(--text-secondary);
+    border-left: 4px solid var(--border-color);
+}
+
+/* -- Progression ------------------------------------------------------- */
+.progress {
+    background: var(--bg-card-alt);
+    border-radius: 4px;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.step-icon {
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+/* -- Source HTML -------------------------------------------------------- */
+.source-pre {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 500px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text-primary);
+}
+
+/* -- Donnees structurees ----------------------------------------------- */
+.schema-card {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.schema-header {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(102, 178, 178, 0.04);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.schema-body {
+    padding: 0.75rem 1rem;
+}
+
+.schema-body pre {
+    margin: 0;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow: auto;
+}
+
+.schema-badge-brut {
+    background: var(--brand-teal-light);
+    color: var(--brand-dark);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+.schema-badge-rendu {
+    background: var(--brand-gold-light);
+    color: #92400e;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+.schema-badge-js {
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+}
+
+/* -- Valeur cellule ---------------------------------------------------- */
+.valeur-presente {
+    color: var(--score-high);
+    font-weight: 600;
+}
+
+.valeur-absente {
+    color: var(--text-muted);
+}
+
+.valeur-texte {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.82rem;
+}
+
+/* -- Screenshots ------------------------------------------------------- */
+.screenshot-container {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg-card-alt);
+    max-height: 600px;
+}
+
+.screenshot-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.screenshot-scroll-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 0.25rem;
+}
+
+/* Slider avant/apres */
+.screenshot-slider-wrapper {
+    max-width: 100%;
+}
+
+.slider-img-container {
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: col-resize;
+    user-select: none;
+    max-height: 600px;
+}
+
+.slider-img-back {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.slider-img-clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 50%;
+    overflow: hidden;
+    border-right: 2px solid var(--brand-gold);
+}
+
+.slider-img-front {
+    width: 100%;
+    height: auto;
+    display: block;
+    /* Largeur fixee au container parent pour eviter le redimensionnement */
+}
+
+.slider-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.slider-handle-line {
+    flex: 1;
+    width: 2px;
+    background: var(--brand-gold);
+}
+
+.slider-handle-grip {
+    background: var(--brand-gold);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+/* Mode diff */
+#screenshotDiffContainer {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#screenshotDiffContainer img {
+    width: 100%;
+    height: auto;
+}
+
+/* Boutons mode actif */
+#panel-screenshots .btn-outline-secondary.active {
+    background: var(--brand-dark);
+    color: #fff;
+    border-color: var(--brand-dark);
+}
+
+/* -- Diff HTML --------------------------------------------------------- */
+.diff-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.diff-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--bg-card-alt);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.diff-header-col {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.diff-header-col:first-child {
+    border-right: 1px solid var(--border-color);
+}
+
+.diff-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.diff-panel {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+.diff-panel:first-child {
+    border-right: 1px solid var(--border-color);
+}
+
+.diff-line {
+    display: flex;
+    min-height: 1.6em;
+    padding: 0 0.5rem;
+    white-space: pre;
+}
+
+.diff-line-num {
+    flex-shrink: 0;
+    width: 45px;
+    text-align: right;
+    padding-right: 0.75rem;
+    color: var(--text-muted);
+    user-select: none;
+    font-size: 11px;
+}
+
+.diff-line-content {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.diff-line-added {
+    background: #d1fae5;
+}
+
+.diff-line-added .diff-line-num {
+    color: #065f46;
+}
+
+.diff-line-removed {
+    background: #fee2e2;
+}
+
+.diff-line-removed .diff-line-num {
+    color: #991b1b;
+}
+
+.diff-line-modified {
+    background: #fef4e0;
+}
+
+.diff-line-modified .diff-line-num {
+    color: #92400e;
+}
+
+.diff-line-empty {
+    background: #f8fafc;
+}
+
+.diff-line-highlight {
+    outline: 2px solid var(--brand-teal);
+    outline-offset: -2px;
+}
+
+@media (max-width: 768px) {
+    .diff-body {
+        grid-template-columns: 1fr;
+        max-height: 400px;
+    }
+    .diff-panel:first-child {
+        border-right: none;
+        border-bottom: 2px solid var(--border-color);
+    }
+}
+
+/* -- Modale detail ----------------------------------------------------- */
+.detail-textarea {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace !important;
+    font-size: 12px !important;
+    line-height: 1.5;
+    background: var(--bg-card-alt);
+    resize: vertical;
+}
+
+.detail-diff-list {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+}
+
+.detail-diff-item {
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    margin-bottom: 2px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.detail-diff-item-brut {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.detail-diff-item-rendu {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Bouton detail dans le tableau */
+.btn-detail {
+    border: none;
+    background: none;
+    color: var(--brand-teal);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-detail:hover {
+    background: var(--brand-teal-light);
+    color: var(--brand-dark);
+}
+
+/* -- Alert ------------------------------------------------------------- */
+.alert-danger {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* -- Panneau d'aide ---------------------------------------------------- */
+.config-help-panel {
+    background: var(--brand-teal-light);
+    border-left: 3px solid var(--brand-gold);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    position: relative;
+    overflow: hidden;
+}
+.config-help-panel ul { padding-left: 1.25rem; margin-bottom: 0.5rem; }
+.config-help-panel li { margin-bottom: 0.35rem; }
+.config-help-panel hr { border-color: rgba(0, 76, 76, 0.1); margin: 0.75rem 0; }
+.help-title { font-weight: 600; color: var(--brand-dark); font-size: 0.9rem; }
+
+/* -- Raccourci hint ---------------------------------------------------- */
+#raccourciHint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* -- Responsive -------------------------------------------------------- */
+@media (max-width: 768px) {
+    .kpi-card .kpi-value {
+        font-size: 1.5rem;
+    }
+
+    .table {
+        font-size: 13px;
+    }
+
+    .valeur-texte {
+        max-width: 150px;
+    }
+
+    .source-pre {
+        max-height: 300px;
+    }
+
+    #raccourciHint {
+        display: none;
+    }
+}
+
+/* -- Scrollbar custom -------------------------------------------------- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
