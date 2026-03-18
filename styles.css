@@ -696,6 +696,42 @@ body {
     }
 }
 
+/* -- Template cards ---------------------------------------------------- */
+.template-card {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.template-zones {
+    font-size: 0.82rem;
+    margin-top: 0.5rem;
+}
+
+.template-zone-row {
+    padding: 0.15rem 0;
+}
+
+.template-zone-name {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 140px;
+    display: inline-block;
+}
+
+/* -- Mode toggle ------------------------------------------------------- */
+#modeToggle .btn-check:checked + .btn-outline-secondary {
+    background: var(--brand-dark);
+    color: #fff;
+    border-color: var(--brand-dark);
+}
+
+/* -- Bulk progress log ------------------------------------------------- */
+#bulkProgressLog .step-item {
+    padding: 0.1rem 0;
+}
+
 /* -- Modale detail ----------------------------------------------------- */
 .detail-textarea {
     font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace !important;

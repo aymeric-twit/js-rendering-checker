@@ -12,6 +12,17 @@ const CHROME_DESKTOP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit
 
 const TAILLE_MAX_HTML = 5 * 1024 * 1024; // 5 Mo
 
+const MAX_URL_LENGTH = 2083;
+
+// Domaines bloques pour simuler le WRS de Google (ads/analytics)
+// Domaines tiers optionnels (NON bloques par defaut — le WRS de Google ne les bloque pas)
+// Reserve pour une future option "Bloquer les scripts tiers"
+const DOMAINES_TIERS_OPTIONNELS = [
+    'google-analytics.com', 'googletagmanager.com', 'doubleclick.net',
+    'googlesyndication.com', 'facebook.net', 'connect.facebook.net',
+    'hotjar.com', 'clarity.ms', 'analytics.tiktok.com',
+];
+
 // --- Niveaux de risque par zone si js_seul ou modifie ---
 const RISQUES_ZONES = [
     'canonical'            => ['js_seul' => 'critique', 'modifie' => 'critique'],
@@ -29,6 +40,8 @@ const RISQUES_ZONES = [
     'liens_externes'       => ['js_seul' => 'faible',   'modifie' => 'faible'],
     'og_tags'              => ['js_seul' => 'faible',   'modifie' => 'faible'],
     'twitter_tags'         => ['js_seul' => 'faible',   'modifie' => 'faible'],
+    'x_robots_tag'         => ['js_seul' => 'critique', 'modifie' => 'critique'],
+    'meta_refresh'         => ['js_seul' => 'haut',     'modifie' => 'haut'],
 ];
 
 // --- Points soustraits du score par zone/statut ---
@@ -47,6 +60,9 @@ const PENALITES_SCORE = [
     'liens_externes'       => ['js_seul' => 2,  'modifie' => 1,  'supprime' => 2],
     'og_tags'              => ['js_seul' => 1,  'modifie' => 0,  'supprime' => 1],
     'twitter_tags'         => ['js_seul' => 1,  'modifie' => 0,  'supprime' => 1],
+    'hreflang'             => ['js_seul' => 20, 'modifie' => 10, 'supprime' => 20],
+    'x_robots_tag'         => ['js_seul' => 25, 'modifie' => 15, 'supprime' => 25],
+    'meta_refresh'         => ['js_seul' => 10, 'modifie' => 5,  'supprime' => 10],
 ];
 
 
@@ -55,6 +71,10 @@ const PENALITES_SCORE = [
  */
 function valider_url(string $url): bool
 {
+    if (strlen($url) > MAX_URL_LENGTH) {
+        return false;
+    }
+
     $url = trim($url);
     if ($url === '') {
         return false;
@@ -86,6 +106,45 @@ function valider_url(string $url): bool
     }
 
     return true;
+}
+
+
+function sanitiser_erreur(string $message): string
+{
+    $message = preg_replace('/token=[a-zA-Z0-9_-]+/', 'token=***', $message);
+    $message = preg_replace('/https?:\/\/production-[a-z]+\.browserless\.io[^\s"]*/', '[Browserless API]', $message);
+    return mb_substr($message, 0, 500);
+}
+
+
+function nettoyer_fichiers_expires(string $repertoire, int $ttlSecondes = 86400): int
+{
+    $compteur = 0;
+    $maintenant = time();
+    if (!is_dir($repertoire)) return 0;
+
+    $items = new DirectoryIterator($repertoire);
+    foreach ($items as $item) {
+        if ($item->isDot()) continue;
+        $age = $maintenant - $item->getMTime();
+        if ($age <= $ttlSecondes) continue;
+
+        if ($item->isDir()) {
+            $sousItems = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($item->getPathname(), FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($sousItems as $sousItem) {
+                $sousItem->isDir() ? rmdir($sousItem->getPathname()) : unlink($sousItem->getPathname());
+            }
+            rmdir($item->getPathname());
+            $compteur++;
+        } else {
+            unlink($item->getPathname());
+            $compteur++;
+        }
+    }
+    return $compteur;
 }
 
 
@@ -451,7 +510,7 @@ function capturer_screenshot(string $url, bool $avecJs = true): array
  *
  * @return array{status: string, html?: string, tempsRendu?: int, error?: string}
  */
-function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 10): array
+function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 7): array
 {
     // --- Branche plateforme : utiliser ApiClient centralise ---
     if (defined('PLATFORM_EMBEDDED') && class_exists('\\Platform\\Http\\ApiClient')) {
@@ -466,7 +525,7 @@ function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 
 
         $payload = [
             'url'            => $url,
-            'gotoOptions'    => ['waitUntil' => 'networkidle0'],
+            'gotoOptions'    => ['waitUntil' => 'networkidle2'],
             'waitForTimeout' => $timeout * 1000,
             'bestAttempt'    => true,
         ];
@@ -494,22 +553,25 @@ function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 
         return ['status' => 'ok', 'html' => $html, 'tempsRendu' => $temps];
     }
 
-    // --- Branche standalone : code curl existant ---
+    // --- Branche standalone : WRS simulation via /function ---
     $cleApi = getenv('BROWSERLESS_API_KEY');
     if (empty($cleApi)) {
         return ['status' => 'unavailable', 'error' => 'Cle API Browserless non configuree'];
     }
 
-    $payload = json_encode([
-        'url'            => $url,
-        'gotoOptions'    => ['waitUntil' => 'networkidle0'],
-        'waitForTimeout' => $timeout * 1000,
-        'bestAttempt'    => true,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $urlJs = json_encode($url);
 
-    $apiUrl = 'https://production-lon.browserless.io/chromium/content'
-        . '?blockAds=false'
-        . '&timeout=' . (($timeout + 15) * 1000)
+    // Simulation fidele du WRS Google : pas de blocage de ressources,
+    // networkidle2, timeout court (5-10s comme Google)
+    $jsCode = 'export default async ({ page }) => {'
+        . 'const res = await page.goto(' . $urlJs . ', { waitUntil: "networkidle2", timeout: ' . ($timeout * 1000) . ' });'
+        . 'await new Promise(r => setTimeout(r, 2000));'
+        . 'const html = await page.content();'
+        . 'return { data: { html, status: res ? res.status() : 0 }, type: "application/json" };'
+        . '};';
+
+    $apiUrl = 'https://production-lon.browserless.io/chromium/function'
+        . '?timeout=' . (($timeout + 10) * 1000)
         . '&token=' . urlencode($cleApi);
 
     $ch = curl_init($apiUrl);
@@ -518,24 +580,31 @@ function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => $timeout + 15,
         CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/javascript'],
+        CURLOPT_POSTFIELDS     => $jsCode,
     ]);
 
     $debut = microtime(true);
-    $html  = curl_exec($ch);
+    $reponse = curl_exec($ch);
     $temps = (int) round((microtime(true) - $debut) * 1000);
     $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $erreur = curl_error($ch);
     curl_close($ch);
 
-    if ($html === false || $erreur !== '') {
-        return ['status' => 'error', 'error' => 'Browserless cURL : ' . $erreur];
+    if ($reponse === false || $erreur !== '') {
+        return ['status' => 'error', 'error' => sanitiser_erreur('Browserless cURL : ' . $erreur)];
     }
 
-    if ($httpCode !== 200 || $html === '') {
-        $extrait = mb_substr((string) $html, 0, 300);
-        return ['status' => 'error', 'error' => 'Browserless HTTP ' . $httpCode . ' — ' . $extrait];
+    if ($httpCode !== 200 || $reponse === '') {
+        $extrait = mb_substr((string) $reponse, 0, 300);
+        return ['status' => 'error', 'error' => sanitiser_erreur('Browserless HTTP ' . $httpCode . ' — ' . $extrait)];
+    }
+
+    $data = json_decode($reponse, true);
+    $html = $data['data']['html'] ?? $data['html'] ?? null;
+
+    if (empty($html)) {
+        return ['status' => 'error', 'error' => 'Reponse Browserless invalide'];
     }
 
     if (strlen($html) > TAILLE_MAX_HTML) {
@@ -588,6 +657,8 @@ function extraire_zones_seo(string $html, string $urlBase = ''): array
         'og_tags'             => [],
         'twitter_tags'        => [],
         'hreflang'            => [],
+        'meta_refresh'        => null,
+        'x_robots_tag'        => '',
         'nombre_mots'         => 0,
         'texte_extrait'       => '',
     ];
@@ -616,6 +687,9 @@ function extraire_zones_seo(string $html, string $urlBase = ''): array
             $resultat['twitter_tags'][$cle] = trim($content);
         }
     }
+
+    // Meta refresh
+    $resultat['meta_refresh'] = extraire_meta_refresh($doc);
 
     // Canonical + hreflang
     $links = $doc->getElementsByTagName('link');
@@ -758,6 +832,28 @@ function extraire_images(DOMDocument $doc): array
 }
 
 
+function extraire_meta_refresh(DOMDocument $doc): ?array
+{
+    $metas = $doc->getElementsByTagName('meta');
+    foreach ($metas as $meta) {
+        $httpEquiv = strtolower($meta->getAttribute('http-equiv'));
+        if ($httpEquiv === 'refresh') {
+            $content = trim($meta->getAttribute('content'));
+            $delai = 0;
+            $urlCible = null;
+            if (preg_match('/^(\d+)\s*;?\s*url\s*=\s*(.+)$/i', $content, $m)) {
+                $delai = (int) $m[1];
+                $urlCible = trim($m[2], " '\"");
+            } elseif (ctype_digit($content)) {
+                $delai = (int) $content;
+            }
+            return ['delai' => $delai, 'url' => $urlCible, 'content' => $content];
+        }
+    }
+    return null;
+}
+
+
 /**
  * Compare les zones SEO du HTML brut vs rendu.
  *
@@ -798,6 +894,21 @@ function comparer_zones(array $brut, array $rendu): array
 
     // Twitter tags
     $comparaison['twitter_tags'] = comparer_valeur_tableau_assoc($brut['twitter_tags'], $rendu['twitter_tags'], 'twitter_tags');
+
+    // Hreflang
+    $comparaison['hreflang'] = comparer_hreflang($brut['hreflang'] ?? [], $rendu['hreflang'] ?? []);
+
+    // Meta refresh
+    $comparaison['meta_refresh'] = comparer_meta_refresh($brut['meta_refresh'], $rendu['meta_refresh']);
+
+    // X-Robots-Tag (if available in headers)
+    if (isset($brut['x_robots_tag']) || isset($rendu['x_robots_tag'])) {
+        $comparaison['x_robots_tag'] = comparer_valeur_texte(
+            $brut['x_robots_tag'] ?? '',
+            $rendu['x_robots_tag'] ?? '',
+            'x_robots_tag'
+        );
+    }
 
     return $comparaison;
 }
@@ -956,6 +1067,146 @@ function comparer_donnees_structurees(array $brut, array $rendu): array
 }
 
 
+function comparer_hreflang(array $brut, array $rendu): array
+{
+    if (empty($brut) && empty($rendu)) {
+        return ['statut' => 'absent', 'risque' => '', 'brut' => $brut, 'rendu' => $rendu];
+    }
+
+    // Normaliser : trier par lang
+    $norm = function (array $items): array {
+        $result = [];
+        foreach ($items as $item) {
+            $result[$item['lang']] = $item['href'];
+        }
+        ksort($result);
+        return $result;
+    };
+
+    $brutNorm = $norm($brut);
+    $renduNorm = $norm($rendu);
+
+    if (empty($brutNorm) && !empty($renduNorm)) {
+        return ['statut' => 'js_seul', 'risque' => RISQUES_ZONES['hreflang']['js_seul'] ?? 'critique', 'brut' => $brut, 'rendu' => $rendu];
+    }
+    if (!empty($brutNorm) && empty($renduNorm)) {
+        return ['statut' => 'supprime', 'risque' => RISQUES_ZONES['hreflang']['js_seul'] ?? 'critique', 'brut' => $brut, 'rendu' => $rendu];
+    }
+    if ($brutNorm === $renduNorm) {
+        return ['statut' => 'identique', 'risque' => '', 'brut' => $brut, 'rendu' => $rendu];
+    }
+
+    return ['statut' => 'modifie', 'risque' => RISQUES_ZONES['hreflang']['modifie'] ?? 'haut', 'brut' => $brut, 'rendu' => $rendu];
+}
+
+
+function comparer_meta_refresh(?array $brut, ?array $rendu): array
+{
+    if ($brut === null && $rendu === null) {
+        return ['statut' => 'absent', 'risque' => '', 'brut' => null, 'rendu' => null];
+    }
+    if ($brut === null && $rendu !== null) {
+        return ['statut' => 'js_seul', 'risque' => RISQUES_ZONES['meta_refresh']['js_seul'] ?? 'haut', 'brut' => null, 'rendu' => $rendu];
+    }
+    if ($brut !== null && $rendu === null) {
+        return ['statut' => 'supprime', 'risque' => RISQUES_ZONES['meta_refresh']['js_seul'] ?? 'haut', 'brut' => $brut, 'rendu' => null];
+    }
+    if ($brut['content'] === $rendu['content']) {
+        return ['statut' => 'identique', 'risque' => '', 'brut' => $brut, 'rendu' => $rendu];
+    }
+
+    return ['statut' => 'modifie', 'risque' => RISQUES_ZONES['meta_refresh']['modifie'] ?? 'haut', 'brut' => $brut, 'rendu' => $rendu];
+}
+
+
+function detecter_template(string $url): string
+{
+    $parties = parse_url($url);
+    $chemin = $parties['path'] ?? '/';
+    $chemin = rtrim($chemin, '/');
+    if ($chemin === '') $chemin = '/';
+
+    $segments = explode('/', trim($chemin, '/'));
+    $segmentsNormalises = [];
+
+    foreach ($segments as $segment) {
+        if ($segment === '') continue;
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $segment)) {
+            $segmentsNormalises[] = '{uuid}';
+        } elseif (ctype_digit($segment)) {
+            $segmentsNormalises[] = '{id}';
+        } elseif (preg_match('/^[0-9a-f]{8,}$/i', $segment)) {
+            $segmentsNormalises[] = '{hash}';
+        } elseif (preg_match('/^.+-\d+$/', $segment)) {
+            $segmentsNormalises[] = '{slug}';
+        } elseif (preg_match('/^\d{4}[-\/]?\d{2}[-\/]?\d{2}$/', $segment)) {
+            $segmentsNormalises[] = '{date}';
+        } elseif (preg_match('/^.+\.(html|htm|php|asp)$/i', $segment)) {
+            $segmentsNormalises[] = '{page}';
+        } else {
+            $segmentsNormalises[] = $segment;
+        }
+    }
+
+    return '/' . implode('/', $segmentsNormalises);
+}
+
+
+function analyser_url_complete(string $url, string $ua, int $timeout): array
+{
+    $brutResultat = fetch_brut($url, $ua);
+    if ($brutResultat['status'] !== 'ok') {
+        return ['status' => 'error', 'error' => $brutResultat['error'] ?? 'Erreur fetch brut', 'url' => $url];
+    }
+
+    $renduResultat = fetch_rendu($url, $ua, $timeout);
+    $modeRawOnly = ($renduResultat['status'] !== 'ok');
+
+    $zonesBrut = extraire_zones_seo($brutResultat['html'], $url);
+
+    // Propager x_robots_tag depuis headers HTTP
+    if (!empty($brutResultat['headers']['x-robots-tag'])) {
+        $zonesBrut['x_robots_tag'] = $brutResultat['headers']['x-robots-tag'];
+    }
+
+    $zonesRendu = null;
+    $comparaison = null;
+    $score = null;
+    $recommandations = null;
+    $compteurs = ['identique' => 0, 'modifie' => 0, 'js_seul' => 0, 'supprime' => 0, 'absent' => 0];
+
+    if (!$modeRawOnly) {
+        $zonesRendu = extraire_zones_seo($renduResultat['html'], $url);
+        $comparaison = comparer_zones($zonesBrut, $zonesRendu);
+        $score = calculer_score($comparaison);
+        $recommandations = generer_recommandations($comparaison);
+
+        foreach ($comparaison as $donnees) {
+            $compteurs[$donnees['statut']] = ($compteurs[$donnees['statut']] ?? 0) + 1;
+        }
+    }
+
+    return [
+        'status'          => 'ok',
+        'url'             => $url,
+        'modeRawOnly'     => $modeRawOnly,
+        'httpCode'        => $brutResultat['httpCode'],
+        'tailleBrut'      => $brutResultat['taille'],
+        'tempsRendu'      => $renduResultat['tempsRendu'] ?? null,
+        'zonesBrut'       => $zonesBrut,
+        'zonesRendu'      => $zonesRendu,
+        'comparaison'     => $comparaison,
+        'score'           => $score,
+        'recommandations' => $recommandations,
+        'compteurs'       => $compteurs,
+        'htmlBrut'        => $brutResultat['html'],
+        'htmlRendu'       => $renduResultat['html'] ?? null,
+        'template'        => detecter_template($url),
+    ];
+}
+
+
 /**
  * Calcule le score global (0-100).
  */
@@ -1066,6 +1317,32 @@ function generer_recommandations(array $comparaison): array
             'js_seul'  => [
                 'fr' => 'Meta description injectee par JavaScript — Google la reecrit souvent, mais mieux vaut la fournir en HTML brut.',
                 'en' => 'Meta description injected by JavaScript — Google often rewrites it, but better to provide it in raw HTML.',
+            ],
+        ],
+        'hreflang' => [
+            'js_seul'  => [
+                'fr' => 'Hreflang injecte par JavaScript — risque majeur pour le SEO international, Google peut ignorer les balises.',
+                'en' => 'Hreflang injected by JavaScript — major risk for international SEO, Google may ignore the tags.',
+            ],
+            'modifie'  => [
+                'fr' => 'Hreflang modifie par JavaScript — les correspondances linguistiques peuvent etre incorrectes au crawl.',
+                'en' => 'Hreflang modified by JavaScript — language mappings may be incorrect at crawl time.',
+            ],
+        ],
+        'x_robots_tag' => [
+            'js_seul'  => [
+                'fr' => 'X-Robots-Tag absent des headers HTTP mais present apres rendu — la directive sera ignoree.',
+                'en' => 'X-Robots-Tag missing from HTTP headers but present after render — directive will be ignored.',
+            ],
+        ],
+        'meta_refresh' => [
+            'js_seul'  => [
+                'fr' => 'Redirection meta refresh injectee par JavaScript — preferer une redirection HTTP 301.',
+                'en' => 'Meta refresh redirect injected by JavaScript — prefer an HTTP 301 redirect.',
+            ],
+            'modifie'  => [
+                'fr' => 'Redirection meta refresh modifiee par JavaScript — URL de destination differente.',
+                'en' => 'Meta refresh redirect modified by JavaScript — different destination URL.',
             ],
         ],
     ];

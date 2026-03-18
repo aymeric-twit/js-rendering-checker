@@ -119,18 +119,7 @@ tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
    Formulaire — lancement de l'analyse
    ====================================================================== */
 
-formAnalyse.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (isRunning) return;
-
-    var url = urlInput.value.trim();
-    if (!url) {
-        afficherErreur(t('error.url_requise'));
-        return;
-    }
-
-    lancerAnalyse(url);
-});
+// Le handler submit est defini plus bas dans la section Mode Toggle
 
 function lancerAnalyse(url) {
     isRunning = true;
@@ -320,6 +309,9 @@ function finirAnalyse() {
 function masquerResultats() {
     resultats.style.display = 'none';
     resultatsRawOnly.style.display = 'none';
+    document.getElementById('resultatsBulk').style.display = 'none';
+    document.getElementById('progressionBulkWrapper').style.display = 'none';
+    document.getElementById('bulkDetailWrapper').style.display = 'none';
     infoRawOnly.style.display = 'none';
     progressionWrapper.style.display = 'none';
     tbodyComparaison.innerHTML = '';
@@ -353,16 +345,23 @@ function afficherResultats(data) {
     kpiModifiees.textContent = data.compteurs.modifie || 0;
     kpiJsSeul.textContent = (data.compteurs.js_seul || 0) + (data.compteurs.supprime || 0);
 
-    // Hash SHA-256 si 0 differences
+    // Hash SHA-256
     var hashBlock = document.getElementById('hashBlock');
-    if (score === 100 && data.hashBrut && data.hashRendu && data.hashBrut === data.hashRendu) {
+    if (data.hashBrut && data.hashRendu) {
         hashBlock.style.display = '';
         document.getElementById('hashBrutValeur').textContent = data.hashBrut;
         document.getElementById('hashRenduValeur').textContent = data.hashRendu;
-    } else if (data.hashBrut && data.hashRendu) {
-        hashBlock.style.display = '';
-        document.getElementById('hashBrutValeur').textContent = data.hashBrut;
-        document.getElementById('hashRenduValeur').textContent = data.hashRendu;
+        var hashIcone = hashBlock.querySelector('i');
+        var hashTexte = hashBlock.querySelector('[data-i18n="hash.identique"]');
+        if (data.hashBrut === data.hashRendu) {
+            hashIcone.className = 'bi bi-shield-check';
+            hashIcone.style.color = 'var(--score-high)';
+            hashTexte.textContent = t('hash.identique');
+        } else {
+            hashIcone.className = 'bi bi-shield-exclamation';
+            hashIcone.style.color = 'var(--score-low)';
+            hashTexte.textContent = t('hash.different');
+        }
     } else {
         hashBlock.style.display = 'none';
     }
@@ -427,10 +426,10 @@ function afficherResultatsRawOnly(data) {
    ====================================================================== */
 
 var ZONES_ORDRE = [
-    'canonical', 'meta_robots', 'title', 'meta_description',
+    'canonical', 'meta_robots', 'x_robots_tag', 'hreflang', 'title', 'meta_description',
     'h1', 'donnees_structurees', 'nombre_mots',
     'liens_internes', 'liens_externes',
-    'h2', 'h3', 'images', 'og_tags', 'twitter_tags'
+    'h2', 'h3', 'images', 'og_tags', 'twitter_tags', 'meta_refresh'
 ];
 
 // Cache des details complets (charge depuis le fichier JSON)
@@ -1395,3 +1394,396 @@ function tronquerHtml(str) {
     if (!str) return '';
     return str.length > 2000 ? str.substring(0, 2000) + '...' : str;
 }
+
+/* ======================================================================
+   Mode Toggle (Single / Bulk)
+   ====================================================================== */
+
+var currentMode = 'single';
+var bulkJobId = null;
+var bulkCsvUrl = null;
+var bulkResultats = [];
+
+document.getElementById('modeSingle').addEventListener('change', function () {
+    currentMode = 'single';
+    document.getElementById('singleUrlSection').style.display = '';
+    document.getElementById('bulkUrlSection').style.display = 'none';
+    document.getElementById('checkScreenshots').parentElement.style.display = '';
+});
+
+document.getElementById('modeBulk').addEventListener('change', function () {
+    currentMode = 'bulk';
+    document.getElementById('singleUrlSection').style.display = 'none';
+    document.getElementById('bulkUrlSection').style.display = '';
+    document.getElementById('checkScreenshots').parentElement.style.display = 'none';
+});
+
+// CSV upload
+document.getElementById('csvUpload').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+        var texte = ev.target.result;
+        var lignes = texte.split(/[\r\n]+/).filter(Boolean);
+        // Prendre la premiere colonne si CSV
+        var urls = lignes.map(function (l) {
+            return l.split(/[;,\t]/)[0].trim();
+        }).filter(function (u) {
+            return u && u.indexOf('.') !== -1;
+        });
+        document.getElementById('urlsBulk').value = urls.join('\n');
+        document.getElementById('bulkUrlCount').textContent = urls.length + ' URL(s) importees';
+    };
+    reader.readAsText(file);
+});
+
+// URL count live
+document.getElementById('urlsBulk').addEventListener('input', function () {
+    var lignes = this.value.split('\n').filter(function (l) { return l.trim() !== ''; });
+    document.getElementById('bulkUrlCount').textContent = lignes.length + ' URL(s)';
+});
+
+/* ======================================================================
+   Override form submit pour gerer le mode bulk
+   ====================================================================== */
+
+formAnalyse.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (isRunning) return;
+
+    if (currentMode === 'bulk') {
+        var urls = document.getElementById('urlsBulk').value.trim();
+        if (!urls) {
+            afficherErreur(t('error.url_requise'));
+            return;
+        }
+        lancerAnalyseBulk(urls);
+    } else {
+        var url = urlInput.value.trim();
+        if (!url) {
+            afficherErreur(t('error.url_requise'));
+            return;
+        }
+        lancerAnalyse(url);
+    }
+});
+
+/* ======================================================================
+   Analyse Bulk — SSE
+   ====================================================================== */
+
+function lancerAnalyseBulk(urlsTexte) {
+    isRunning = true;
+    masquerErreur();
+    masquerResultats();
+    bulkResultats = [];
+    bulkJobId = null;
+    bulkCsvUrl = null;
+
+    // Masquer les resultats single, montrer la progression bulk
+    resultats.style.display = 'none';
+    document.getElementById('resultatsBulk').style.display = 'none';
+    var progressWrapper = document.getElementById('progressionBulkWrapper');
+    progressWrapper.style.display = '';
+    document.getElementById('bulkProgressBar').style.width = '0%';
+    document.getElementById('bulkProgressPct').textContent = '0%';
+    document.getElementById('bulkProgressLog').innerHTML = '';
+    document.getElementById('tbodyBulk').innerHTML = '';
+
+    btnAnalyser.disabled = true;
+    btnAnalyser.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + t('btn.analyser');
+
+    var formData = new FormData();
+    formData.append('urls', urlsTexte);
+    formData.append('ua_type', document.querySelector('input[name="ua_type"]:checked').value);
+    formData.append('timeout', document.getElementById('timeoutJs').value);
+
+    // CSRF
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfInput = document.querySelector('input[name="_csrf_token"]');
+    var csrfToken = csrfMeta ? csrfMeta.content : (csrfInput ? csrfInput.value : '');
+    if (csrfToken) formData.append('_csrf_token', csrfToken);
+
+    abortController = new AbortController();
+
+    fetch(BASE_URL + '/process_bulk.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData,
+        signal: abortController.signal,
+    }).then(function (response) {
+        if (response.status === 429) throw new Error(t('error.quota_epuise'));
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+
+        function pump() {
+            return reader.read().then(function (result) {
+                if (result.done) { finirAnalyseBulk(); return; }
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop();
+                var currentEvent = '';
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    if (line.indexOf('event: ') === 0) {
+                        currentEvent = line.substring(7).trim();
+                    } else if (line.indexOf('data: ') === 0) {
+                        try {
+                            var data = JSON.parse(line.substring(6));
+                            traiterEvenementBulk(currentEvent, data);
+                        } catch (err) {}
+                        currentEvent = '';
+                    }
+                }
+                return pump();
+            });
+        }
+        return pump();
+    }).catch(function (err) {
+        if (err.name === 'AbortError') return;
+        afficherErreur(err.message || t('error.analyse_echouee'));
+        finirAnalyseBulk();
+    });
+}
+
+function traiterEvenementBulk(event, data) {
+    var log = document.getElementById('bulkProgressLog');
+
+    switch (event) {
+        case 'validation':
+            if (data.invalid > 0) {
+                log.innerHTML += '<div class="text-muted"><small>' + data.invalid + ' URL(s) invalide(s) ignoree(s)</small></div>';
+            }
+            log.innerHTML += '<div><small>' + data.total + ' URL(s) a analyser</small></div>';
+            break;
+
+        case 'url_start':
+            log.innerHTML += '<div class="step-item"><span class="step-icon">🔄</span><small>' + escapeHtml(data.url) + '</small></div>';
+            log.scrollTop = log.scrollHeight;
+            break;
+
+        case 'url_done':
+            bulkResultats.push(data);
+            ajouterLigneBulk(data);
+            // Mettre a jour la derniere ligne du log
+            var lastStep = log.querySelector('.step-item:last-child .step-icon');
+            if (lastStep) lastStep.textContent = '✅';
+            break;
+
+        case 'url_error':
+            log.innerHTML += '<div class="step-item"><span class="step-icon">❌</span><small class="text-danger">' + escapeHtml(data.url) + ' — ' + escapeHtml(data.erreur) + '</small></div>';
+            log.scrollTop = log.scrollHeight;
+            break;
+
+        case 'progress':
+            document.getElementById('bulkProgressBar').style.width = data.pct + '%';
+            document.getElementById('bulkProgressPct').textContent = data.pct + '%';
+            break;
+
+        case 'bulk_done':
+            bulkJobId = data.jobId;
+            bulkCsvUrl = data.csvUrl;
+            afficherResultatsBulk(data);
+            break;
+
+        case 'error':
+            afficherErreur(data.message || t('error.analyse_echouee'));
+            break;
+    }
+}
+
+function finirAnalyseBulk() {
+    isRunning = false;
+    abortController = null;
+    btnAnalyser.disabled = false;
+    btnAnalyser.innerHTML = '<i class="bi bi-play-fill me-1"></i> ' + t('btn.analyser');
+
+    var collapseEl = document.getElementById('collapseFormulaire');
+    var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+    bsCollapse.hide();
+    btnToggleFormulaire.classList.remove('d-none');
+}
+
+/* ======================================================================
+   Affichage resultats Bulk
+   ====================================================================== */
+
+function ajouterLigneBulk(data) {
+    var tbody = document.getElementById('tbodyBulk');
+    var tr = document.createElement('tr');
+    tr.setAttribute('data-url-hash', data.urlHash);
+
+    var scoreColor = (data.score >= 80) ? 'var(--score-high)' : (data.score >= 50) ? 'var(--score-mid)' : 'var(--score-low)';
+    var risqueBadge = badgeRisque(data.risqueGlobal);
+
+    var urlTruncated = data.url.length > 60 ? data.url.substring(0, 60) + '...' : data.url;
+
+    tr.innerHTML = '<td class="url-cell"><code title="' + escapeAttr(data.url) + '">' + escapeHtml(urlTruncated) + '</code></td>'
+        + '<td><strong style="color:' + scoreColor + '">' + (data.score !== null ? data.score : '—') + '</strong></td>'
+        + '<td>' + (data.compteurs ? data.compteurs.identique || 0 : '') + '</td>'
+        + '<td>' + (data.compteurs ? data.compteurs.modifie || 0 : '') + '</td>'
+        + '<td>' + (data.compteurs ? (data.compteurs.js_seul || 0) + (data.compteurs.supprime || 0) : '') + '</td>'
+        + '<td><code class="small">' + escapeHtml(data.template || '/') + '</code></td>'
+        + '<td>' + risqueBadge + '</td>'
+        + '<td><button class="btn-detail btn-detail-bulk" data-job-id="' + (bulkJobId || '') + '" data-url-hash="' + data.urlHash + '" data-url="' + escapeAttr(data.url) + '"><i class="bi bi-eye"></i></button></td>';
+
+    tbody.appendChild(tr);
+}
+
+function afficherResultatsBulk(data) {
+    var container = document.getElementById('resultatsBulk');
+    container.style.display = '';
+
+    // Masquer le panneau d'aide
+    var helpPanel = document.getElementById('helpPanel');
+    if (helpPanel) helpPanel.style.display = 'none';
+
+    // KPI
+    document.getElementById('bulkKpiTotal').textContent = data.total;
+    document.getElementById('bulkKpiScoreMoyen').textContent = data.scoreMoyen + '/100';
+    var scoreEl = document.getElementById('bulkKpiScoreMoyen');
+    scoreEl.style.color = data.scoreMoyen >= 80 ? 'var(--score-high)' : data.scoreMoyen >= 50 ? 'var(--score-mid)' : 'var(--score-low)';
+
+    var critiques = bulkResultats.filter(function (r) { return r.risqueGlobal === 'critique'; }).length;
+    var jsDep = bulkResultats.filter(function (r) { return r.compteurs && (r.compteurs.js_seul > 0 || r.compteurs.supprime > 0); }).length;
+    document.getElementById('bulkKpiCritiques').textContent = critiques;
+    document.getElementById('bulkKpiJsDependant').textContent = jsDep;
+    document.getElementById('bulkKpiTemplates').textContent = data.templates ? data.templates.length : 0;
+    document.getElementById('bulkKpiErreurs').textContent = data.failed;
+
+    // Mettre a jour les boutons detail avec le jobId
+    document.querySelectorAll('.btn-detail-bulk').forEach(function (btn) {
+        btn.setAttribute('data-job-id', data.jobId);
+    });
+
+    // Templates
+    afficherTemplateGrouping(data.templates || []);
+}
+
+function afficherTemplateGrouping(templates) {
+    var container = document.getElementById('templateGrouping');
+    if (!templates.length) {
+        container.innerHTML = '<p class="text-muted small">' + t('bulk.aucun_template') + '</p>';
+        return;
+    }
+
+    var html = '';
+    templates.forEach(function (tpl) {
+        var scoreColor = tpl.scoreMoyen >= 80 ? 'var(--score-high)' : tpl.scoreMoyen >= 50 ? 'var(--score-mid)' : 'var(--score-low)';
+
+        html += '<div class="template-card mb-3">';
+        html += '<div class="d-flex justify-content-between align-items-center mb-2">';
+        html += '<div><code class="fw-bold">' + escapeHtml(tpl.pattern) + '</code> <span class="badge bg-secondary ms-2">' + tpl.urls + ' URL(s)</span></div>';
+        html += '<span class="fw-bold" style="color:' + scoreColor + '">' + tpl.scoreMoyen + '/100</span>';
+        html += '</div>';
+
+        // Zones problematiques
+        if (tpl.zones) {
+            html += '<div class="template-zones">';
+            var zonesOrdre = ['canonical', 'meta_robots', 'hreflang', 'title', 'donnees_structurees', 'h1', 'nombre_mots', 'liens_internes', 'meta_description'];
+            zonesOrdre.forEach(function (zone) {
+                if (!tpl.zones[zone]) return;
+                var stats = tpl.zones[zone];
+                var jsSeul = stats.js_seul || 0;
+                var modifie = stats.modifie || 0;
+                var supprime = stats.supprime || 0;
+                var identique = stats.identique || 0;
+                if (jsSeul === 0 && modifie === 0 && supprime === 0) return;
+
+                var parts = [];
+                if (jsSeul > 0) parts.push('<span class="text-danger">' + jsSeul + ' JS seul</span>');
+                if (modifie > 0) parts.push('<span style="color:var(--score-mid)">' + modifie + ' modifie</span>');
+                if (supprime > 0) parts.push('<span class="text-danger">' + supprime + ' supprime</span>');
+                if (identique > 0) parts.push('<span class="text-success">' + identique + ' identique</span>');
+
+                html += '<div class="template-zone-row"><span class="template-zone-name">' + t('zone.' + zone) + '</span> : ' + parts.join(', ') + '</div>';
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
+}
+
+// Delegated click pour detail bulk
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.btn-detail-bulk');
+    if (!btn) return;
+    var jobId = btn.getAttribute('data-job-id');
+    var urlHash = btn.getAttribute('data-url-hash');
+    var url = btn.getAttribute('data-url');
+    if (!jobId || !urlHash) return;
+    ouvrirDetailBulk(jobId, urlHash, url);
+});
+
+function ouvrirDetailBulk(jobId, urlHash, url) {
+    var wrapper = document.getElementById('bulkDetailWrapper');
+    var content = document.getElementById('bulkDetailContent');
+    document.getElementById('bulkDetailUrl').textContent = url;
+    content.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Chargement...</div>';
+    wrapper.style.display = '';
+
+    // Masquer le tableau et les KPI
+    document.getElementById('bulkKpiRow').style.display = 'none';
+    document.querySelectorAll('#resultatsBulk > .card').forEach(function (c) { c.style.display = 'none'; });
+
+    fetch(BASE_URL + '/job_detail.php?jobId=' + jobId + '&urlHash=' + urlHash)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) {
+                content.innerHTML = '<div class="alert alert-danger">' + escapeHtml(data.error) + '</div>';
+                return;
+            }
+            // Reutiliser le rendu single-URL existant
+            content.innerHTML = '<div id="bulkSingleResult"></div>';
+            // Afficher un resume simplifie
+            var html = '<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr>'
+                + '<th>' + t('table.zone') + '</th><th>' + t('table.html_brut') + '</th><th>' + t('table.html_rendu') + '</th><th>' + t('table.statut') + '</th><th>' + t('table.risque') + '</th></tr></thead><tbody>';
+            if (data.comparaison) {
+                ZONES_ORDRE.forEach(function (zone) {
+                    var c = data.comparaison[zone];
+                    if (!c) return;
+                    html += '<tr><td class="fw-600">' + t('zone.' + zone) + '</td>'
+                        + '<td class="valeur-texte">' + formaterValeurZone(zone, c.brut) + '</td>'
+                        + '<td class="valeur-texte">' + formaterValeurZone(zone, c.rendu) + '</td>'
+                        + '<td>' + badgeStatut(c.statut) + '</td>'
+                        + '<td>' + badgeRisque(c.risque) + '</td></tr>';
+                });
+            }
+            html += '</tbody></table></div>';
+
+            // Recommandations
+            if (data.recommandations && data.recommandations.length > 0) {
+                html += '<div class="mt-3"><h6 class="fw-bold mb-2"><i class="bi bi-lightbulb me-2"></i>' + t('reco.titre') + '</h6>';
+                var icones = { 'critique': '🔴', 'haut': '🟠', 'moyen': '⚠️', 'faible': 'ℹ️' };
+                data.recommandations.forEach(function (reco) {
+                    var msg = langueActuelle === 'fr' ? reco.message_fr : reco.message_en;
+                    html += '<div class="recommandation-item recommandation-' + reco.risque + '"><span>' + (icones[reco.risque] || '') + '</span><span>' + escapeHtml(msg) + '</span></div>';
+                });
+                html += '</div>';
+            }
+
+            content.innerHTML = html;
+        })
+        .catch(function (err) {
+            content.innerHTML = '<div class="alert alert-danger">' + escapeHtml(err.message) + '</div>';
+        });
+}
+
+// Retour a la liste bulk
+document.getElementById('btnRetourBulk').addEventListener('click', function () {
+    document.getElementById('bulkDetailWrapper').style.display = 'none';
+    document.getElementById('bulkKpiRow').style.display = '';
+    document.querySelectorAll('#resultatsBulk > .card').forEach(function (c) { c.style.display = ''; });
+});
+
+// Export CSV bulk
+document.getElementById('btnExportBulkCsv').addEventListener('click', function () {
+    if (!bulkCsvUrl) return;
+    window.location.href = BASE_URL + '/' + bulkCsvUrl;
+});

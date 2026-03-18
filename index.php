@@ -63,13 +63,37 @@
             <div class="card-body">
                 <form id="formAnalyse">
 
-                    <!-- URL -->
-                    <div class="mb-3">
+                    <!-- Toggle mode -->
+                    <div class="btn-group mb-3" role="group" id="modeToggle">
+                        <input type="radio" class="btn-check" name="mode" id="modeSingle" value="single" checked>
+                        <label class="btn btn-outline-secondary btn-sm" for="modeSingle" data-i18n="form.mode_single">URL unique</label>
+                        <input type="radio" class="btn-check" name="mode" id="modeBulk" value="bulk">
+                        <label class="btn btn-outline-secondary btn-sm" for="modeBulk" data-i18n="form.mode_bulk">Multi-URL</label>
+                    </div>
+
+                    <!-- URL unique -->
+                    <div class="mb-3" id="singleUrlSection">
                         <label for="urlInput" class="form-label">
                             <span data-i18n="form.label_url">URL a analyser</span>
                         </label>
-                        <input type="url" class="form-control" id="urlInput" name="url" required
+                        <input type="url" class="form-control" id="urlInput" name="url"
                                data-i18n-placeholder="form.placeholder_url" placeholder="https://example.com/page">
+                    </div>
+
+                    <!-- Multi-URL -->
+                    <div class="mb-3" id="bulkUrlSection" style="display: none;">
+                        <label for="urlsBulk" class="form-label">
+                            <span data-i18n="form.label_urls_bulk">URLs a analyser</span>
+                            <span class="text-muted small">(une par ligne, max 50)</span>
+                        </label>
+                        <textarea class="form-control font-monospace" id="urlsBulk" name="urls" rows="6"
+                                  data-i18n-placeholder="form.placeholder_urls_bulk"
+                                  placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"></textarea>
+                        <div class="mt-2">
+                            <label class="form-label small text-muted" data-i18n="form.ou_csv">ou importer un fichier CSV</label>
+                            <input type="file" class="form-control form-control-sm" id="csvUpload" accept=".csv,.txt" style="max-width: 300px;">
+                        </div>
+                        <div class="small text-muted mt-1" id="bulkUrlCount"></div>
                     </div>
 
                     <!-- Options avancees (collapse) -->
@@ -137,7 +161,45 @@
         <span id="infoRawOnlyTexte"></span>
     </div>
 
-    <!-- Resultats -->
+    </div><!-- /.col-lg-8 -->
+
+    <!-- Panneau d'aide -->
+    <div class="col-lg-4" id="helpPanel">
+        <div class="config-help-panel">
+            <div class="help-title mb-2" data-i18n="help.titre_comment">
+                <i class="bi bi-info-circle me-1"></i> Comment ca marche
+            </div>
+            <ul>
+                <li data-i18n="help.etape1">Saisissez l'URL de la page a analyser.</li>
+                <li data-i18n="help.etape2">L'outil recupere le <strong>HTML brut</strong> (comme Googlebot au crawl).</li>
+                <li data-i18n="help.etape3">Puis le <strong>HTML rendu</strong> apres execution JavaScript (comme le WRS de Google).</li>
+                <li data-i18n="help.etape4">Les zones SEO critiques sont comparees avec un niveau de risque.</li>
+            </ul>
+            <hr>
+            <div class="help-title mb-2" data-i18n="help.titre_zones">
+                <i class="bi bi-layers me-1"></i> Zones analysees
+            </div>
+            <ul>
+                <li data-i18n="help.zone_title">Title, Meta description, Canonical</li>
+                <li data-i18n="help.zone_robots">Meta robots, Hreflang</li>
+                <li data-i18n="help.zone_headings">Headings (H1, H2, H3)</li>
+                <li data-i18n="help.zone_jsonld">Donnees structurees (JSON-LD)</li>
+                <li data-i18n="help.zone_liens">Liens internes/externes, Images</li>
+                <li data-i18n="help.zone_og">Open Graph, Twitter Cards</li>
+            </ul>
+            <hr>
+            <div class="help-title mb-2" data-i18n="help.titre_quota">
+                <i class="bi bi-speedometer2 me-1"></i> Quota
+            </div>
+            <ul class="mb-0">
+                <li data-i18n="help.quota_credit">1 analyse = <strong>1 credit</strong></li>
+            </ul>
+        </div>
+    </div><!-- /.col-lg-4 -->
+
+    </div><!-- /.row -->
+
+    <!-- Resultats (pleine largeur) -->
     <div id="resultats" style="display: none;">
 
         <!-- KPI Row -->
@@ -352,7 +414,125 @@
 
     </div><!-- /#resultats -->
 
-    <!-- Raw-only : zones SEO brutes -->
+    <!-- Resultats Bulk (pleine largeur) -->
+    <div id="resultatsBulk" style="display: none;">
+
+        <!-- Bulk KPI Row -->
+        <div class="row g-3 mb-4" id="bulkKpiRow">
+            <div class="col-4 col-md-2">
+                <div class="kpi-card kpi-teal">
+                    <div class="kpi-value" id="bulkKpiTotal">0</div>
+                    <div class="kpi-label" data-i18n="bulk.kpi_total">URLs</div>
+                </div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="bulkKpiScoreMoyen">—</div>
+                    <div class="kpi-label" data-i18n="bulk.kpi_score_moyen">Score moyen</div>
+                </div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="kpi-card kpi-red">
+                    <div class="kpi-value" id="bulkKpiCritiques">0</div>
+                    <div class="kpi-label" data-i18n="bulk.kpi_critiques">Critiques</div>
+                </div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="bulkKpiJsDependant" style="color: var(--score-mid);">0</div>
+                    <div class="kpi-label" data-i18n="bulk.kpi_js_dependent">JS-dependent</div>
+                </div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="bulkKpiTemplates">0</div>
+                    <div class="kpi-label" data-i18n="bulk.kpi_templates">Templates</div>
+                </div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="bulkKpiErreurs" style="color: var(--text-muted);">0</div>
+                    <div class="kpi-label" data-i18n="bulk.kpi_erreurs">Erreurs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglets Bulk -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <ul class="nav nav-tabs mb-0" id="ongletsBulk" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab-bulk-urls" data-bs-toggle="tab" data-bs-target="#panel-bulk-urls" type="button" role="tab" data-i18n="bulk.tab_urls">URLs</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-bulk-templates" data-bs-toggle="tab" data-bs-target="#panel-bulk-templates" type="button" role="tab" data-i18n="bulk.tab_templates">Templates</button>
+                        </li>
+                    </ul>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnExportBulkCsv">
+                        <i class="bi bi-download me-1"></i> CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="tab-content">
+                <!-- URLs summary table -->
+                <div class="tab-pane fade show active" id="panel-bulk-urls" role="tabpanel">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="tableBulk">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="bulk.col_url">URL</th>
+                                        <th style="width:80px;" data-i18n="bulk.col_score">Score</th>
+                                        <th style="width:60px;" title="Identiques">Id.</th>
+                                        <th style="width:60px;" title="Modifiees">Mod.</th>
+                                        <th style="width:60px;" title="JS seul">JS</th>
+                                        <th data-i18n="bulk.col_template">Template</th>
+                                        <th style="width:80px;" data-i18n="bulk.col_risque">Risque</th>
+                                        <th style="width:50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyBulk"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template grouping -->
+                <div class="tab-pane fade" id="panel-bulk-templates" role="tabpanel">
+                    <div class="card-body" id="templateGrouping"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail d'une URL (charge dynamiquement) -->
+        <div id="bulkDetailWrapper" style="display: none;">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRetourBulk">
+                    <i class="bi bi-arrow-left me-1"></i> <span data-i18n="bulk.retour">Retour a la liste</span>
+                </button>
+                <span class="small text-muted" id="bulkDetailUrl"></span>
+            </div>
+            <div id="bulkDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- Progression Bulk -->
+    <div id="progressionBulkWrapper" class="card mb-4" style="display: none;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold small" data-i18n="bulk.progress_titre">Analyse multi-URL en cours</span>
+                <span class="small text-muted" id="bulkProgressPct">0%</span>
+            </div>
+            <div class="progress mb-3" style="height: 8px;">
+                <div class="progress-bar" id="bulkProgressBar" role="progressbar" style="width: 0%; background: var(--brand-teal);"></div>
+            </div>
+            <div id="bulkProgressLog" class="small" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- Raw-only : zones SEO brutes (pleine largeur) -->
     <div id="resultatsRawOnly" style="display: none;">
         <div class="card mb-4">
             <div class="card-header">
@@ -373,44 +553,6 @@
             </div>
         </div>
     </div>
-
-    </div><!-- /.col-lg-8 -->
-
-    <!-- Panneau d'aide -->
-    <div class="col-lg-4" id="helpPanel">
-        <div class="config-help-panel">
-            <div class="help-title mb-2" data-i18n="help.titre_comment">
-                <i class="bi bi-info-circle me-1"></i> Comment ca marche
-            </div>
-            <ul>
-                <li data-i18n="help.etape1">Saisissez l'URL de la page a analyser.</li>
-                <li data-i18n="help.etape2">L'outil recupere le <strong>HTML brut</strong> (comme Googlebot au crawl).</li>
-                <li data-i18n="help.etape3">Puis le <strong>HTML rendu</strong> apres execution JavaScript (comme le WRS de Google).</li>
-                <li data-i18n="help.etape4">Les zones SEO critiques sont comparees avec un niveau de risque.</li>
-            </ul>
-            <hr>
-            <div class="help-title mb-2" data-i18n="help.titre_zones">
-                <i class="bi bi-layers me-1"></i> Zones analysees
-            </div>
-            <ul>
-                <li data-i18n="help.zone_title">Title, Meta description, Canonical</li>
-                <li data-i18n="help.zone_robots">Meta robots, Hreflang</li>
-                <li data-i18n="help.zone_headings">Headings (H1, H2, H3)</li>
-                <li data-i18n="help.zone_jsonld">Donnees structurees (JSON-LD)</li>
-                <li data-i18n="help.zone_liens">Liens internes/externes, Images</li>
-                <li data-i18n="help.zone_og">Open Graph, Twitter Cards</li>
-            </ul>
-            <hr>
-            <div class="help-title mb-2" data-i18n="help.titre_quota">
-                <i class="bi bi-speedometer2 me-1"></i> Quota
-            </div>
-            <ul class="mb-0">
-                <li data-i18n="help.quota_credit">1 analyse = <strong>1 credit</strong></li>
-            </ul>
-        </div>
-    </div><!-- /.col-lg-4 -->
-
-    </div><!-- /.row -->
 
 </div>
 

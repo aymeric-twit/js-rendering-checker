@@ -130,6 +130,7 @@ var TRANSLATIONS = {
 
         // Hash
         'hash.identique': 'HTML brut et rendu identiques',
+        'hash.different': 'HTML brut et rendu differents',
 
         // Detail modale
         'detail.voir': 'Voir le detail',
@@ -156,6 +157,40 @@ var TRANSLATIONS = {
         'csv.html_rendu': 'HTML rendu',
         'csv.statut': 'Statut',
         'csv.risque': 'Risque',
+
+        // Mode toggle
+        'form.mode_single': 'URL unique',
+        'form.mode_bulk': 'Multi-URL',
+        'form.label_urls_bulk': 'URLs a analyser',
+        'form.placeholder_urls_bulk': 'https://example.com/page1\nhttps://example.com/page2\nhttps://example.com/page3',
+        'form.ou_csv': 'ou importer un fichier CSV',
+
+        // Bulk KPI
+        'bulk.kpi_total': 'URLs',
+        'bulk.kpi_score_moyen': 'Score moyen',
+        'bulk.kpi_critiques': 'Critiques',
+        'bulk.kpi_js_dependent': 'JS-dependent',
+        'bulk.kpi_templates': 'Templates',
+        'bulk.kpi_erreurs': 'Erreurs',
+
+        // Bulk onglets
+        'bulk.tab_urls': 'URLs',
+        'bulk.tab_templates': 'Templates',
+        'bulk.col_url': 'URL',
+        'bulk.col_score': 'Score',
+        'bulk.col_template': 'Template',
+        'bulk.col_risque': 'Risque',
+        'bulk.retour': 'Retour a la liste',
+        'bulk.progress_titre': 'Analyse multi-URL en cours',
+        'bulk.detail_voir': 'Voir le detail',
+        'bulk.template_urls': '{n} URL(s)',
+        'bulk.template_score_moyen': 'Score moyen : {score}/100',
+        'bulk.aucun_template': 'Aucun template detecte.',
+
+        // Nouvelles zones SEO
+        'zone.hreflang': 'Hreflang',
+        'zone.x_robots_tag': 'X-Robots-Tag',
+        'zone.meta_refresh': 'Meta refresh',
     },
     en: {
         // Navbar
@@ -285,6 +320,7 @@ var TRANSLATIONS = {
 
         // Hash
         'hash.identique': 'Raw and rendered HTML are identical',
+        'hash.different': 'Raw and rendered HTML differ',
 
         // Detail modale
         'detail.voir': 'View details',
@@ -311,5 +347,39 @@ var TRANSLATIONS = {
         'csv.html_rendu': 'Rendered HTML',
         'csv.statut': 'Status',
         'csv.risque': 'Risk',
+
+        // Mode toggle
+        'form.mode_single': 'Single URL',
+        'form.mode_bulk': 'Multi-URL',
+        'form.label_urls_bulk': 'URLs to analyze',
+        'form.placeholder_urls_bulk': 'https://example.com/page1\nhttps://example.com/page2\nhttps://example.com/page3',
+        'form.ou_csv': 'or import a CSV file',
+
+        // Bulk KPI
+        'bulk.kpi_total': 'URLs',
+        'bulk.kpi_score_moyen': 'Avg. Score',
+        'bulk.kpi_critiques': 'Critical',
+        'bulk.kpi_js_dependent': 'JS-dependent',
+        'bulk.kpi_templates': 'Templates',
+        'bulk.kpi_erreurs': 'Errors',
+
+        // Bulk onglets
+        'bulk.tab_urls': 'URLs',
+        'bulk.tab_templates': 'Templates',
+        'bulk.col_url': 'URL',
+        'bulk.col_score': 'Score',
+        'bulk.col_template': 'Template',
+        'bulk.col_risque': 'Risk',
+        'bulk.retour': 'Back to list',
+        'bulk.progress_titre': 'Multi-URL analysis in progress',
+        'bulk.detail_voir': 'View details',
+        'bulk.template_urls': '{n} URL(s)',
+        'bulk.template_score_moyen': 'Average score: {score}/100',
+        'bulk.aucun_template': 'No template detected.',
+
+        // Nouvelles zones SEO
+        'zone.hreflang': 'Hreflang',
+        'zone.x_robots_tag': 'X-Robots-Tag',
+        'zone.meta_refresh': 'Meta refresh',
     }
 };
