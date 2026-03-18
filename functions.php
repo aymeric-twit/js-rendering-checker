@@ -97,6 +97,59 @@ function valider_url(string $url): bool
  */
 function fetch_brut(string $url, string $ua = CHROME_MOBILE_UA): array
 {
+    // --- Branche plateforme : utiliser ApiClient centralise ---
+    if (defined('PLATFORM_EMBEDDED') && class_exists('\\Platform\\Http\\ApiClient')) {
+        $config = \Platform\Http\HttpConfig::charger();
+        $baseUrl = $config->browserlessUrl;
+        $token = $config->browserlessToken;
+        $timeout = $config->browserlessTimeout;
+
+        if (empty($token)) {
+            return fetch_brut_curl($url, $ua);
+        }
+
+        $jsCode = 'export default async ({ page }) => {'
+            . 'await page.setJavaScriptEnabled(false);'
+            . 'const res = await page.goto(' . json_encode($url) . ', { waitUntil: "networkidle2", timeout: 30000 });'
+            . 'const html = await page.content();'
+            . 'const status = res ? res.status() : 0;'
+            . 'const finalUrl = page.url();'
+            . 'return { data: { html, status, finalUrl }, type: "application/json" };'
+            . '};';
+
+        $apiUrl = rtrim($baseUrl, '/') . '/chromium/function'
+            . '?timeout=' . ($timeout * 1000)
+            . '&token=' . urlencode($token);
+
+        $client = new \Platform\Http\ApiClient('render-checker');
+        $reponse = $client->postRaw($apiUrl, $jsCode, ['Content-Type' => 'application/javascript']);
+
+        if (!$reponse->estSucces()) {
+            $extrait = mb_substr($reponse->body, 0, 300);
+            return ['status' => 'error', 'error' => 'Browserless function HTTP ' . $reponse->statusCode . ' — ' . $extrait];
+        }
+
+        $data = $reponse->json();
+        $html = $data['data']['html'] ?? $data['html'] ?? null;
+        if (empty($html)) {
+            $extrait = mb_substr($reponse->body, 0, 500);
+            return ['status' => 'error', 'error' => 'Reponse Browserless invalide — ' . $extrait];
+        }
+        if (strlen($html) > TAILLE_MAX_HTML) {
+            return ['status' => 'error', 'error' => 'HTML brut trop volumineux (> 5 Mo)'];
+        }
+
+        return [
+            'status'    => 'ok',
+            'html'      => $html,
+            'httpCode'  => $data['data']['status'] ?? $data['status'] ?? 200,
+            'headers'   => [],
+            'urlFinale' => $data['data']['finalUrl'] ?? $data['finalUrl'] ?? $url,
+            'taille'    => strlen($html),
+        ];
+    }
+
+    // --- Branche standalone : code curl existant ---
     $cleApi = getenv('BROWSERLESS_API_KEY');
 
     // Fallback cURL si pas de cle Browserless
@@ -172,6 +225,31 @@ function fetch_brut(string $url, string $ua = CHROME_MOBILE_UA): array
  */
 function fetch_brut_curl(string $url, string $ua): array
 {
+    // --- Branche plateforme : utiliser WebClient centralise ---
+    if (defined('PLATFORM_EMBEDDED') && class_exists('\\Platform\\Http\\WebClient')) {
+        $webClient = new \Platform\Http\WebClient('render-checker');
+        $reponse = $webClient->fetch($url);
+
+        if ($reponse->erreur !== null && $reponse->erreur !== '') {
+            return ['status' => 'error', 'error' => 'WebClient : ' . $reponse->erreur];
+        }
+
+        $html = $reponse->body;
+        if (strlen($html) > TAILLE_MAX_HTML) {
+            return ['status' => 'error', 'error' => 'HTML trop volumineux (> 5 Mo)'];
+        }
+
+        return [
+            'status'    => 'ok',
+            'html'      => $html,
+            'httpCode'  => $reponse->statusCode,
+            'headers'   => $reponse->headers,
+            'urlFinale' => $reponse->urlFinale ?? $url,
+            'taille'    => strlen($html),
+        ];
+    }
+
+    // --- Branche standalone : code curl existant ---
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -229,6 +307,72 @@ function fetch_brut_curl(string $url, string $ua): array
  */
 function capturer_screenshot(string $url, bool $avecJs = true): array
 {
+    // --- Branche plateforme : utiliser ApiClient centralise ---
+    if (defined('PLATFORM_EMBEDDED') && class_exists('\\Platform\\Http\\ApiClient')) {
+        $config = \Platform\Http\HttpConfig::charger();
+        $baseUrl = $config->browserlessUrl;
+        $token = $config->browserlessToken;
+        $timeout = $config->browserlessTimeout;
+
+        if (empty($token)) {
+            return ['status' => 'unavailable'];
+        }
+
+        $urlJs = json_encode($url);
+        $jsEnabled = $avecJs ? 'true' : 'false';
+
+        $jsCode = 'export default async ({ page }) => {'
+            . 'await page.setViewport({ width: 1280, height: 800 });'
+            . 'await page.setJavaScriptEnabled(' . $jsEnabled . ');'
+            . 'await page.goto(' . $urlJs . ', { waitUntil: "networkidle2", timeout: 30000 });'
+            . ($avecJs ? 'await new Promise(r => setTimeout(r, 3000));' : '')
+            . 'await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));'
+            . 'await new Promise(r => setTimeout(r, 1000));'
+            . 'await page.evaluate(() => window.scrollTo(0, 0));'
+            . 'const buf = await page.screenshot({ fullPage: true, type: "png" });'
+            . 'return { data: buf, type: "image/png" };'
+            . '};';
+
+        $apiUrl = rtrim($baseUrl, '/') . '/chromium/function'
+            . '?timeout=' . ($timeout * 1000)
+            . '&token=' . urlencode($token);
+
+        $client = new \Platform\Http\ApiClient('render-checker');
+        $reponse = $client->postRaw($apiUrl, $jsCode, ['Content-Type' => 'application/javascript']);
+
+        if (!$reponse->estSucces() || $reponse->body === '') {
+            return ['status' => 'error', 'error' => 'Screenshot brut HTTP ' . $reponse->statusCode];
+        }
+
+        $body = $reponse->body;
+
+        // La reponse /function est du JSON : {"data": {"0": 137, "1": 80, ...}} (Buffer serialise)
+        if (str_starts_with(trim($body), '{')) {
+            $json = json_decode($body, true);
+            $data = $json['data'] ?? null;
+
+            if (is_array($data)) {
+                ksort($data, SORT_NUMERIC);
+                $values = array_values($data);
+                $bin = '';
+                foreach ($values as $byte) {
+                    $bin .= chr((int) $byte);
+                }
+                $body = $bin;
+            } elseif (is_string($data) && str_contains($data, ',')) {
+                $bytes = array_map('intval', explode(',', $data));
+                $body = pack('C*', ...$bytes);
+            }
+        }
+
+        if (strlen($body) < 8 || substr($body, 0, 4) !== chr(137) . 'PNG') {
+            return ['status' => 'error', 'error' => 'Screenshot sans JS : format invalide'];
+        }
+
+        return ['status' => 'ok', 'base64' => base64_encode($body)];
+    }
+
+    // --- Branche standalone : code curl existant ---
     $cleApi = getenv('BROWSERLESS_API_KEY');
     if (empty($cleApi)) {
         return ['status' => 'unavailable'];
@@ -309,6 +453,48 @@ function capturer_screenshot(string $url, bool $avecJs = true): array
  */
 function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 10): array
 {
+    // --- Branche plateforme : utiliser ApiClient centralise ---
+    if (defined('PLATFORM_EMBEDDED') && class_exists('\\Platform\\Http\\ApiClient')) {
+        $config = \Platform\Http\HttpConfig::charger();
+        $baseUrl = $config->browserlessUrl;
+        $token = $config->browserlessToken;
+        $blTimeout = $config->browserlessTimeout;
+
+        if (empty($token)) {
+            return ['status' => 'unavailable', 'error' => 'Cle API Browserless non configuree'];
+        }
+
+        $payload = [
+            'url'            => $url,
+            'gotoOptions'    => ['waitUntil' => 'networkidle0'],
+            'waitForTimeout' => $timeout * 1000,
+            'bestAttempt'    => true,
+        ];
+
+        $apiUrl = rtrim($baseUrl, '/') . '/chromium/content'
+            . '?blockAds=false'
+            . '&timeout=' . (($timeout + 15) * 1000)
+            . '&token=' . urlencode($token);
+
+        $client = new \Platform\Http\ApiClient('render-checker');
+        $debut = microtime(true);
+        $reponse = $client->postJson($apiUrl, $payload);
+        $temps = (int) round((microtime(true) - $debut) * 1000);
+
+        if (!$reponse->estSucces() || $reponse->body === '') {
+            $extrait = mb_substr($reponse->body, 0, 300);
+            return ['status' => 'error', 'error' => 'Browserless HTTP ' . $reponse->statusCode . ' — ' . $extrait];
+        }
+
+        $html = $reponse->body;
+        if (strlen($html) > TAILLE_MAX_HTML) {
+            return ['status' => 'error', 'error' => 'HTML rendu trop volumineux (> 5 Mo)'];
+        }
+
+        return ['status' => 'ok', 'html' => $html, 'tempsRendu' => $temps];
+    }
+
+    // --- Branche standalone : code curl existant ---
     $cleApi = getenv('BROWSERLESS_API_KEY');
     if (empty($cleApi)) {
         return ['status' => 'unavailable', 'error' => 'Cle API Browserless non configuree'];
