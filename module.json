@@ -41,5 +41,6 @@
     "credits_par_analyse": 1,
     "units_per_credit": 50,
     "unit_label": "URLs",
-    "daily_limit": 200
+    "daily_limit": 200,
+    "periode_quota": "jour"
 }
