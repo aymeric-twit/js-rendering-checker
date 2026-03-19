@@ -9,12 +9,37 @@
     "quota_mode": "url",
     "default_quota": 100,
     "display_mode": "embedded",
-    "env_keys": ["BROWSERLESS_API_KEY"],
-    "languages": ["fr", "en"],
+    "env_keys": [
+        "BROWSERLESS_API_KEY"
+    ],
+    "languages": [
+        "fr",
+        "en"
+    ],
     "routes": [
-        { "path": "process.php", "method": "POST", "type": "stream" },
-        { "path": "process_bulk.php", "method": "POST", "type": "stream" },
-        { "path": "job_detail.php", "method": "GET", "type": "ajax" },
-        { "path": "download_bulk.php", "method": "GET", "type": "ajax" }
-    ]
+        {
+            "path": "process.php",
+            "method": "POST",
+            "type": "stream"
+        },
+        {
+            "path": "process_bulk.php",
+            "method": "POST",
+            "type": "stream"
+        },
+        {
+            "path": "job_detail.php",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "download_bulk.php",
+            "method": "GET",
+            "type": "ajax"
+        }
+    ],
+    "credits_par_analyse": 1,
+    "units_per_credit": 50,
+    "unit_label": "URLs",
+    "daily_limit": 200
 }
