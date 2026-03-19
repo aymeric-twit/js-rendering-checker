@@ -7,7 +7,7 @@
     "entry_point": "index.php",
     "sort_order": 25,
     "quota_mode": "url",
-    "default_quota": 100,
+    "default_quota": 200,
     "display_mode": "embedded",
     "env_keys": [
         "BROWSERLESS_API_KEY"
@@ -40,7 +40,5 @@
     ],
     "credits_par_analyse": 1,
     "units_per_credit": 50,
-    "unit_label": "URLs",
-    "daily_limit": 200,
     "periode_quota": "jour"
 }
