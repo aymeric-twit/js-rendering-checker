@@ -6,7 +6,7 @@
     "icon": "bi-filetype-html",
     "entry_point": "index.php",
     "sort_order": 25,
-    "quota_mode": "url",
+    "quota_mode": "api_call",
     "default_quota": 200,
     "display_mode": "embedded",
     "env_keys": [
