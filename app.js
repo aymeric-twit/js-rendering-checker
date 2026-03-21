@@ -126,8 +126,15 @@ function lancerAnalyse(url) {
     masquerErreur();
     masquerResultats();
 
+    // Replier le panneau d'aide, afficher progression cote a cote
+    var helpPanel = document.getElementById('helpPanel');
+    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.classList.add('help-hidden'); };
+    var colConfig = document.getElementById('colConfig');
+    var colProgression = document.getElementById('colProgression');
+    if (colConfig) { colConfig.classList.remove('col-lg-8'); colConfig.classList.add('col-lg-6'); }
+    if (colProgression) colProgression.classList.remove('d-none');
+
     // Afficher progression
-    progressionWrapper.style.display = '';
     setProgress(0, '');
     progressSteps.innerHTML = '';
 
@@ -295,6 +302,12 @@ function finirAnalyse() {
     btnAnalyser.disabled = false;
     btnAnalyser.innerHTML = '<i class="bi bi-play-fill me-1"></i> ' + t('btn.analyser');
 
+    // Replier la progression et restaurer le layout
+    var colProgression = document.getElementById('colProgression');
+    var colConfig = document.getElementById('colConfig');
+    if (colProgression) colProgression.classList.add('d-none');
+    if (colConfig) { colConfig.classList.remove('col-lg-6'); colConfig.classList.add('col-lg-8'); }
+
     // Replier le formulaire et montrer le bouton toggle
     var collapseEl = document.getElementById('collapseFormulaire');
     var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
@@ -386,7 +399,7 @@ function afficherResultats(data) {
 
     // Masquer le panneau d'aide
     var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) helpPanel.style.display = 'none';
+    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.style.display = 'none'; };
 }
 
 function afficherResultatsRawOnly(data) {
@@ -1481,6 +1494,14 @@ function lancerAnalyseBulk(urlsTexte) {
     bulkJobId = null;
     bulkCsvUrl = null;
 
+    // Replier le panneau d'aide, afficher progression cote a cote
+    var helpPanel = document.getElementById('helpPanel');
+    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.classList.add('help-hidden'); };
+    var colConfig = document.getElementById('colConfig');
+    var colProgression = document.getElementById('colProgression');
+    if (colConfig) { colConfig.classList.remove('col-lg-8'); colConfig.classList.add('col-lg-6'); }
+    if (colProgression) colProgression.classList.remove('d-none');
+
     // Masquer les resultats single, montrer la progression bulk
     resultats.style.display = 'none';
     document.getElementById('resultatsBulk').style.display = 'none';
@@ -1602,6 +1623,12 @@ function finirAnalyseBulk() {
     btnAnalyser.disabled = false;
     btnAnalyser.innerHTML = '<i class="bi bi-play-fill me-1"></i> ' + t('btn.analyser');
 
+    // Replier la progression et restaurer le layout
+    var colProgression = document.getElementById('colProgression');
+    var colConfig = document.getElementById('colConfig');
+    if (colProgression) colProgression.classList.add('d-none');
+    if (colConfig) { colConfig.classList.remove('col-lg-6'); colConfig.classList.add('col-lg-8'); }
+
     var collapseEl = document.getElementById('collapseFormulaire');
     var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
     bsCollapse.hide();
@@ -1640,7 +1667,7 @@ function afficherResultatsBulk(data) {
 
     // Masquer le panneau d'aide
     var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) helpPanel.style.display = 'none';
+    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.style.display = 'none'; };
 
     // KPI
     document.getElementById('bulkKpiTotal').textContent = data.total;
