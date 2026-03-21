@@ -138,13 +138,12 @@ function lancerAnalyse(url) {
     // Construire FormData
     var formData = new FormData(formAnalyse);
 
-    // CSRF (plateforme)
-    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    var csrfInput = document.querySelector('input[name="_csrf_token"]');
-    var csrfToken = csrfMeta ? csrfMeta.content : (csrfInput ? csrfInput.value : '');
-
-    if (csrfToken) {
-        formData.append('_csrf_token', csrfToken);
+    // CSRF (plateforme) — récupérer depuis le champ injecté dans le formulaire
+    var csrfInput = formData.get('_csrf_token') || '';
+    if (!csrfInput) {
+        var csrfEl = document.querySelector('input[name="_csrf_token"]');
+        csrfInput = csrfEl ? csrfEl.value : '';
+        if (csrfInput) formData.set('_csrf_token', csrfInput);
     }
 
     // SSE via fetch + ReadableStream
@@ -152,7 +151,7 @@ function lancerAnalyse(url) {
 
     fetch(BASE_URL + '/process.php', {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfInput },
         body: formData,
         signal: abortController.signal,
     }).then(function (response) {
@@ -1499,17 +1498,16 @@ function lancerAnalyseBulk(urlsTexte) {
     formData.append('ua_type', document.querySelector('input[name="ua_type"]:checked').value);
     formData.append('timeout', document.getElementById('timeoutJs').value);
 
-    // CSRF
-    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    var csrfInput = document.querySelector('input[name="_csrf_token"]');
-    var csrfToken = csrfMeta ? csrfMeta.content : (csrfInput ? csrfInput.value : '');
-    if (csrfToken) formData.append('_csrf_token', csrfToken);
+    // CSRF — récupérer depuis le champ injecté dans le formulaire
+    var csrfEl = document.querySelector('input[name="_csrf_token"]');
+    var csrfToken = csrfEl ? csrfEl.value : '';
+    if (csrfToken) formData.set('_csrf_token', csrfToken);
 
     abortController = new AbortController();
 
     fetch(BASE_URL + '/process_bulk.php', {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
         body: formData,
         signal: abortController.signal,
     }).then(function (response) {
