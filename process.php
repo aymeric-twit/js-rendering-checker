@@ -68,7 +68,7 @@ if (class_exists('\\Platform\\Module\\Quota')) {
 // --- Parametres ---
 $url = trim($_POST['url'] ?? '');
 $uaType = $_POST['ua_type'] ?? 'smartphone';
-$timeout = (int) ($_POST['timeout'] ?? 10);
+$timeout = (int) ($_POST['timeout'] ?? 15);
 $avecScreenshots = !empty($_POST['screenshots']);
 
 // Validation
@@ -212,16 +212,22 @@ if ($avecScreenshots && !$modeRawOnly) {
 
     $screenshotBrut = capturer_screenshot($url, false);
     if ($screenshotBrut['status'] === 'ok') {
-        $fichier = $jobId . '_brut.png';
-        file_put_contents($screenshotDir . '/' . $fichier, base64_decode($screenshotBrut['base64']));
-        $screenshotPaths['brut'] = 'data/screenshots/' . $fichier;
+        $screenshotData = $screenshotBrut['base64'];
+        if (strlen($screenshotData) <= 5000000) {
+            $fichier = $jobId . '_brut.png';
+            file_put_contents($screenshotDir . '/' . $fichier, base64_decode($screenshotData));
+            $screenshotPaths['brut'] = 'data/screenshots/' . $fichier;
+        }
     }
 
     $screenshotRendu = capturer_screenshot($url, true);
     if ($screenshotRendu['status'] === 'ok') {
-        $fichier = $jobId . '_rendu.png';
-        file_put_contents($screenshotDir . '/' . $fichier, base64_decode($screenshotRendu['base64']));
-        $screenshotPaths['rendu'] = 'data/screenshots/' . $fichier;
+        $screenshotData = $screenshotRendu['base64'];
+        if (strlen($screenshotData) <= 5000000) {
+            $fichier = $jobId . '_rendu.png';
+            file_put_contents($screenshotDir . '/' . $fichier, base64_decode($screenshotData));
+            $screenshotPaths['rendu'] = 'data/screenshots/' . $fichier;
+        }
     }
 
     // Envoyer les URLs des screenshots (quelques octets au lieu de Mo)

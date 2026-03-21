@@ -187,6 +187,14 @@ var TRANSLATIONS = {
         'bulk.template_score_moyen': 'Score moyen : {score}/100',
         'bulk.aucun_template': 'Aucun template detecte.',
 
+        // Bulk chargement
+        'bulk.chargement': 'Chargement...',
+
+        // Erreurs supplementaires
+        'error.max_urls': 'Maximum 50 URLs. Les URLs supplementaires ont ete ignorees.',
+        'error.analyse_annulee': 'Analyse annulee.',
+        'error.screenshots_indisponibles': 'Screenshots indisponibles.',
+
         // Nouvelles zones SEO
         'zone.hreflang': 'Hreflang',
         'zone.x_robots_tag': 'X-Robots-Tag',
@@ -376,6 +384,14 @@ var TRANSLATIONS = {
         'bulk.template_urls': '{n} URL(s)',
         'bulk.template_score_moyen': 'Average score: {score}/100',
         'bulk.aucun_template': 'No template detected.',
+
+        // Bulk chargement
+        'bulk.chargement': 'Loading...',
+
+        // Erreurs supplementaires
+        'error.max_urls': 'Maximum 50 URLs. Extra URLs have been ignored.',
+        'error.analyse_annulee': 'Analysis cancelled.',
+        'error.screenshots_indisponibles': 'Screenshots unavailable.',
 
         // Nouvelles zones SEO
         'zone.hreflang': 'Hreflang',

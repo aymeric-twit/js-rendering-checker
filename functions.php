@@ -96,11 +96,13 @@ function valider_url(string $url): bool
         return false;
     }
 
-    // Refuse les IPs privees
-    $ip = gethostbyname($hote);
-    if ($ip !== $hote) {
-        $filtres = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
-        if (filter_var($ip, FILTER_VALIDATE_IP, $filtres) === false) {
+    // Refuse les IPs privees/reservees (verification de toutes les IPs resolues)
+    $ips = gethostbynamel($hote);
+    if ($ips === false) {
+        return false;
+    }
+    foreach ($ips as $ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
             return false;
         }
     }
@@ -111,8 +113,8 @@ function valider_url(string $url): bool
 
 function sanitiser_erreur(string $message): string
 {
-    $message = preg_replace('/token=[a-zA-Z0-9_-]+/', 'token=***', $message);
-    $message = preg_replace('/https?:\/\/production-[a-z]+\.browserless\.io[^\s"]*/', '[Browserless API]', $message);
+    // Strip query parameters from any URL to avoid leaking tokens
+    $message = preg_replace('/\?[^\s"\']+/', '?[REDACTED]', $message);
     return mb_substr($message, 0, 500);
 }
 
@@ -532,7 +534,7 @@ function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 
 
         $apiUrl = rtrim($baseUrl, '/') . '/chromium/content'
             . '?blockAds=false'
-            . '&timeout=' . (($timeout + 15) * 1000)
+            . '&timeout=' . (($timeout + 30) * 1000)
             . '&token=' . urlencode($token);
 
         $client = new \Platform\Http\ApiClient('render-checker');
@@ -578,7 +580,7 @@ function fetch_rendu(string $url, string $ua = CHROME_MOBILE_UA, int $timeout = 
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => $timeout + 15,
+        CURLOPT_TIMEOUT        => $timeout + 30,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_HTTPHEADER     => ['Content-Type: application/javascript'],
         CURLOPT_POSTFIELDS     => $jsCode,
@@ -1034,6 +1036,43 @@ function comparer_nombre_mots(int $brut, int $rendu): array
 
 
 /**
+ * Normalise les JSON-LD pour comparaison semantique (tri recursif des cles).
+ *
+ * @param array<int, string> $jsons
+ * @return array<int, string>
+ */
+function normaliser_json_ld(array $jsons): array
+{
+    $result = [];
+    foreach ($jsons as $json) {
+        $decoded = json_decode($json, true);
+        if ($decoded !== null) {
+            ksort_recursive($decoded);
+            $result[] = json_encode($decoded, JSON_UNESCAPED_UNICODE);
+        } else {
+            $result[] = $json;
+        }
+    }
+    sort($result);
+    return $result;
+}
+
+
+/**
+ * Tri recursif des cles d'un tableau associatif.
+ */
+function ksort_recursive(array &$arr): void
+{
+    ksort($arr);
+    foreach ($arr as &$v) {
+        if (is_array($v)) {
+            ksort_recursive($v);
+        }
+    }
+}
+
+
+/**
  * Compare les donnees structurees.
  */
 function comparer_donnees_structurees(array $brut, array $rendu): array
@@ -1058,11 +1097,9 @@ function comparer_donnees_structurees(array $brut, array $rendu): array
     sort($typesRendu);
 
     if ($typesBrut === $typesRendu && $nBrut === $nRendu) {
-        // Memes types, comparer le contenu JSON
-        $jsonsBrut = array_map(fn($s) => $s['json'], $brut);
-        $jsonsRendu = array_map(fn($s) => $s['json'], $rendu);
-        sort($jsonsBrut);
-        sort($jsonsRendu);
+        // Memes types, comparer le contenu JSON (comparaison semantique)
+        $jsonsBrut = normaliser_json_ld(array_map(fn($s) => $s['json'], $brut));
+        $jsonsRendu = normaliser_json_ld(array_map(fn($s) => $s['json'], $rendu));
 
         if ($jsonsBrut === $jsonsRendu) {
             return ['statut' => 'identique', 'risque' => '', 'brut' => $brut, 'rendu' => $rendu, 'nombre_brut' => $nBrut, 'nombre_rendu' => $nRendu];

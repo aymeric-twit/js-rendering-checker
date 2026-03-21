@@ -134,6 +134,17 @@
                         </button>
                         <span class="text-muted small" id="raccourciHint" data-i18n="form.raccourci_hint">Ctrl+Entree pour lancer</span>
                     </div>
+
+                    <!-- Barre de progression inline -->
+                    <div id="inlineProgress" class="mt-3" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-semibold" id="inlineProgressLabel" style="color: var(--brand-dark);"></small>
+                            <small class="text-muted" id="inlineProgressPct">0%</small>
+                        </div>
+                        <div class="progress" style="height: 6px; border-radius: 3px;">
+                            <div class="progress-bar" id="inlineProgressBar" role="progressbar" style="width: 0%; background: var(--brand-teal); transition: width 0.3s;"></div>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -147,25 +158,9 @@
 
     </div><!-- /.colConfig -->
 
-    <!-- Colonne progression (cote a cote avec config pendant l'analyse) -->
-    <div class="col-lg-4 d-none" id="colProgression">
-                            <div id="progressionWrapper" class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="fw-bold small" data-i18n="progress.titre">Analyse en cours</span>
-                    <span class="small text-muted" id="progressPct">0%</span>
-                </div>
-                <div class="progress mb-3" style="height: 8px;">
-                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%; background: var(--brand-teal);"></div>
-                </div>
-                <div id="progressSteps" class="small"></div>
-            </div>
-        </div>
-    </div>
-
     <!-- Panneau d'aide -->
     <div class="col-lg-4" id="helpPanel">
-        <div id="platformCreditsSlot"></div>
+        <div id="platformCreditsSlot" class="mb-3"></div>
         <div class="config-help-panel">
             <div class="help-title mb-2" data-i18n="help.titre_comment">
                 <i class="bi bi-info-circle me-1"></i> Comment ca marche

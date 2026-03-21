@@ -63,6 +63,12 @@ $timeout = (int) ($_POST['timeout'] ?? 7);
 $timeout = max(3, min(30, $timeout));
 $ua = ($uaType === 'desktop') ? CHROME_DESKTOP_UA : CHROME_MOBILE_UA;
 
+// --- Limite de taille ---
+if (strlen($urlsTexte) > 100000) {
+    sseEvent('error', ['message' => 'Données trop volumineuses (max 100 Ko).']);
+    exit;
+}
+
 // --- Parse URLs ---
 $lignes = array_filter(array_map('trim', explode("\n", $urlsTexte)));
 $urlsValides = [];
@@ -103,6 +109,16 @@ sseEvent('validation', [
 $jobId = bin2hex(random_bytes(12));
 $jobDir = __DIR__ . '/data/jobs/' . $jobId;
 mkdir($jobDir, 0755, true);
+
+// Sauver les metadonnees du job (dont l'identifiant utilisateur pour le controle d'acces)
+$metaDonnees = ['date_creation' => date('c')];
+if (defined('PLATFORM_EMBEDDED') && class_exists('\\Auth')) {
+    $userId = \Auth::id();
+    if ($userId !== null) {
+        $metaDonnees['user_id'] = $userId;
+    }
+}
+file_put_contents($jobDir . '/meta.json', json_encode($metaDonnees, JSON_UNESCAPED_UNICODE));
 
 $resultats = [];
 $succeeded = 0;

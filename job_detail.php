@@ -18,7 +18,22 @@ if (!preg_match('/^[a-f0-9]{24}$/', $jobId) || !preg_match('/^[a-f0-9]{12}$/', $
     exit;
 }
 
-$fichier = __DIR__ . '/data/jobs/' . $jobId . '/' . $urlHash . '.json';
+$jobDir = __DIR__ . '/data/jobs/' . $jobId;
+$fichier = $jobDir . '/' . $urlHash . '.json';
+
+// Verifier que le job appartient a l'utilisateur courant
+$metaFile = $jobDir . '/meta.json';
+if (file_exists($metaFile)) {
+    $meta = json_decode(file_get_contents($metaFile), true);
+    if (defined('PLATFORM_EMBEDDED') && class_exists('\\Auth')) {
+        $userId = \Auth::id();
+        if ($userId !== null && isset($meta['user_id']) && (int) $meta['user_id'] !== $userId) {
+            http_response_code(403);
+            echo json_encode(['erreur' => 'Accès non autorisé.']);
+            exit;
+        }
+    }
+}
 
 if (!file_exists($fichier)) {
     http_response_code(404);

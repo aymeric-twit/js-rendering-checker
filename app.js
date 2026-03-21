@@ -126,13 +126,14 @@ function lancerAnalyse(url) {
     masquerErreur();
     masquerResultats();
 
-    // Cacher le panneau d'aide (colonne entiere), afficher progression cote a cote
-    var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) helpPanel.classList.add('d-none');
-    var colConfig = document.getElementById('colConfig');
-    var colProgression = document.getElementById('colProgression');
-    if (colConfig) { colConfig.classList.remove('col-lg-8'); colConfig.classList.add('col-lg-6'); }
-    if (colProgression) colProgression.classList.remove('d-none');
+    // Cacher le mode d'emploi
+    var hp = document.getElementById('helpPanel');
+    if (hp) { var hpInner = hp.querySelector('.config-help-panel'); if (hpInner) hpInner.classList.add('help-hidden'); }
+
+    // Afficher la barre de progression inline
+    var inlineProgress = document.getElementById('inlineProgress');
+    if (inlineProgress) inlineProgress.style.display = '';
+    setInlineProgress(0, t('progress.init') || 'Initialisation...');
 
     // Afficher progression
     setProgress(0, '');
@@ -218,10 +219,25 @@ function lancerAnalyse(url) {
    Traitement des evenements SSE
    ====================================================================== */
 
+function setInlineProgress(pct, label) {
+    var bar = document.getElementById('inlineProgressBar');
+    var pctEl = document.getElementById('inlineProgressPct');
+    var labelEl = document.getElementById('inlineProgressLabel');
+    if (bar) bar.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (labelEl) labelEl.textContent = label || '';
+}
+
+function hideInlineProgress() {
+    var el = document.getElementById('inlineProgress');
+    if (el) el.style.display = 'none';
+}
+
 function traiterEvenement(event, data) {
     switch (event) {
         case 'progress':
             setProgress(data.pct || 0, langueActuelle === 'fr' ? data.message_fr : data.message_en);
+            setInlineProgress(data.pct || 0, langueActuelle === 'fr' ? data.message_fr : data.message_en);
             ajouterStep(data);
             break;
 
@@ -301,17 +317,25 @@ function finirAnalyse() {
     abortController = null;
     btnAnalyser.disabled = false;
     btnAnalyser.innerHTML = '<i class="bi bi-play-fill me-1"></i> ' + t('btn.analyser');
+    hideInlineProgress();
 
-    // Replier la progression et restaurer le layout
-    var colProgression = document.getElementById('colProgression');
-    var colConfig = document.getElementById('colConfig');
-    if (colProgression) colProgression.classList.add('d-none');
-    if (colConfig) { colConfig.classList.remove('col-lg-6'); colConfig.classList.add('col-lg-8'); }
+    // Re-afficher le mode d'emploi
+    var hp = document.getElementById('helpPanel');
+    if (hp) { var hpInner = hp.querySelector('.config-help-panel'); if (hpInner) hpInner.classList.remove('help-hidden'); }
 
     // Auto-collapse config
     var configBody = document.getElementById('configBody');
     if (configBody) { bootstrap.Collapse.getOrCreateInstance(configBody, {toggle:false}).hide(); }
 }
+
+function annulerAnalyse() {
+    if (abortController) {
+        abortController.abort();
+        finirAnalyse();
+        afficherErreur(t('error.analyse_annulee') || 'Analyse annulee.');
+    }
+}
+window.annulerAnalyse = annulerAnalyse;
 
 /* ======================================================================
    Affichage des resultats
@@ -395,9 +419,9 @@ function afficherResultats(data) {
         afficherModeCote();
     }
 
-    // Masquer le panneau d'aide
-    var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.style.display = 'none'; };
+    // Masquer le mode d'emploi (garder la colonne visible pour le bandeau credits)
+    var hp = document.getElementById('helpPanel');
+    if (hp) { var hpInner = hp.querySelector('.config-help-panel'); if (hpInner) hpInner.classList.add('help-hidden'); }
 }
 
 function afficherResultatsRawOnly(data) {
@@ -1003,10 +1027,20 @@ function afficherModeDiff() {
     var imgA = new Image();
     var imgB = new Image();
     var loaded = 0;
+    var errored = false;
+
+    imgA.onerror = function() {
+        errored = true;
+        container.innerHTML = '<div class="alert alert-warning small p-3"><i class="bi bi-exclamation-triangle me-2"></i>' + (t('error.screenshots_indisponibles') || 'Screenshots indisponibles.') + '</div>';
+    };
+    imgB.onerror = function() {
+        errored = true;
+        container.innerHTML = '<div class="alert alert-warning small p-3"><i class="bi bi-exclamation-triangle me-2"></i>' + (t('error.screenshots_indisponibles') || 'Screenshots indisponibles.') + '</div>';
+    };
 
     function onBothLoaded() {
         loaded++;
-        if (loaded < 2) return;
+        if (loaded < 2 || errored) return;
 
         var w = Math.max(imgA.width, imgB.width);
         var h = Math.max(imgA.height, imgB.height);
@@ -1419,14 +1453,16 @@ document.getElementById('modeSingle').addEventListener('change', function () {
     currentMode = 'single';
     document.getElementById('singleUrlSection').style.display = '';
     document.getElementById('bulkUrlSection').style.display = 'none';
-    document.getElementById('checkScreenshots').parentElement.style.display = '';
+    var chk = document.getElementById('checkScreenshots');
+    if (chk && chk.parentElement) chk.parentElement.style.display = '';
 });
 
 document.getElementById('modeBulk').addEventListener('change', function () {
     currentMode = 'bulk';
     document.getElementById('singleUrlSection').style.display = 'none';
     document.getElementById('bulkUrlSection').style.display = '';
-    document.getElementById('checkScreenshots').parentElement.style.display = 'none';
+    var chk = document.getElementById('checkScreenshots');
+    if (chk && chk.parentElement) chk.parentElement.style.display = 'none';
 });
 
 // CSV upload
@@ -1441,7 +1477,8 @@ document.getElementById('csvUpload').addEventListener('change', function (e) {
         var urls = lignes.map(function (l) {
             return l.split(/[;,\t]/)[0].trim();
         }).filter(function (u) {
-            return u && u.indexOf('.') !== -1;
+            if (!u) return false;
+            try { new URL(u); return true; } catch(e) { return false; }
         });
         document.getElementById('urlsBulk').value = urls.join('\n');
         document.getElementById('bulkUrlCount').textContent = urls.length + ' URL(s) importees';
@@ -1485,20 +1522,34 @@ formAnalyse.addEventListener('submit', function (e) {
    ====================================================================== */
 
 function lancerAnalyseBulk(urlsTexte) {
+    // Verifier la limite de 50 URLs
+    var urlsLignes = urlsTexte.split(/[\r\n]+/).filter(function (l) { return l.trim() !== ''; });
+    var urlsTronquees = false;
+    if (urlsLignes.length > 50) {
+        urlsLignes = urlsLignes.slice(0, 50);
+        urlsTexte = urlsLignes.join('\n');
+        urlsTronquees = true;
+    }
+
     isRunning = true;
     masquerErreur();
     masquerResultats();
+
+    if (urlsTronquees) {
+        afficherErreur(t('error.max_urls') || 'Maximum 50 URLs. Les URLs supplementaires ont ete ignorees.');
+    }
     bulkResultats = [];
     bulkJobId = null;
     bulkCsvUrl = null;
 
-    // Cacher le panneau d'aide (colonne entiere), afficher progression cote a cote
-    var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) helpPanel.classList.add('d-none');
-    var colConfig = document.getElementById('colConfig');
-    var colProgression = document.getElementById('colProgression');
-    if (colConfig) { colConfig.classList.remove('col-lg-8'); colConfig.classList.add('col-lg-6'); }
-    if (colProgression) colProgression.classList.remove('d-none');
+    // Cacher le mode d'emploi
+    var hp = document.getElementById('helpPanel');
+    if (hp) { var hpInner = hp.querySelector('.config-help-panel'); if (hpInner) hpInner.classList.add('help-hidden'); }
+
+    // Barre de progression inline
+    var inlineProgress = document.getElementById('inlineProgress');
+    if (inlineProgress) inlineProgress.style.display = '';
+    setInlineProgress(0, t('progress.init') || 'Initialisation...');
 
     // Masquer les resultats single, montrer la progression bulk
     resultats.style.display = 'none';
@@ -1620,12 +1671,11 @@ function finirAnalyseBulk() {
     abortController = null;
     btnAnalyser.disabled = false;
     btnAnalyser.innerHTML = '<i class="bi bi-play-fill me-1"></i> ' + t('btn.analyser');
+    hideInlineProgress();
 
-    // Replier la progression et restaurer le layout
-    var colProgression = document.getElementById('colProgression');
-    var colConfig = document.getElementById('colConfig');
-    if (colProgression) colProgression.classList.add('d-none');
-    if (colConfig) { colConfig.classList.remove('col-lg-6'); colConfig.classList.add('col-lg-8'); }
+    // Re-afficher le mode d'emploi
+    var hp = document.getElementById('helpPanel');
+    if (hp) { var hpInner = hp.querySelector('.config-help-panel'); if (hpInner) hpInner.classList.remove('help-hidden'); }
 
     // Auto-collapse config
     var configBody = document.getElementById('configBody');
@@ -1662,9 +1712,9 @@ function afficherResultatsBulk(data) {
     var container = document.getElementById('resultatsBulk');
     container.style.display = '';
 
-    // Masquer le panneau d'aide
-    var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.style.display = 'none'; };
+    // Masquer le mode d'emploi (garder la colonne visible pour le bandeau credits)
+    var hp = document.getElementById('helpPanel');
+    if (hp) { var hpInner = hp.querySelector('.config-help-panel'); if (hpInner) hpInner.classList.add('help-hidden'); }
 
     // KPI
     document.getElementById('bulkKpiTotal').textContent = data.total;
@@ -1749,7 +1799,7 @@ function ouvrirDetailBulk(jobId, urlHash, url) {
     var wrapper = document.getElementById('bulkDetailWrapper');
     var content = document.getElementById('bulkDetailContent');
     document.getElementById('bulkDetailUrl').textContent = url;
-    content.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Chargement...</div>';
+    content.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>' + t('bulk.chargement') + '</div>';
     wrapper.style.display = '';
 
     // Masquer le tableau et les KPI
