@@ -151,8 +151,7 @@
 
     <!-- Colonne progression (cote a cote avec config pendant l'analyse) -->
     <div class="col-lg-4 d-none" id="colProgression">
-                    <div id="platformCreditsSlot"></div>
-        <div id="progressionWrapper" class="card">
+                            <div id="progressionWrapper" class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="fw-bold small" data-i18n="progress.titre">Analyse en cours</span>
@@ -168,6 +167,7 @@
 
     <!-- Panneau d'aide -->
     <div class="col-lg-4" id="helpPanel">
+        <div id="platformCreditsSlot"></div>
         <div class="config-help-panel">
             <div class="help-title mb-2" data-i18n="help.titre_comment">
                 <i class="bi bi-info-circle me-1"></i> Comment ca marche
