@@ -61,7 +61,7 @@
         </div>
         <div class="collapse show" id="collapseFormulaire">
             <div class="card-body">
-                <form id="formAnalyse">
+                <form id="formAnalyse" method="POST" onsubmit="return false;">
 
                     <!-- Toggle mode -->
                     <div class="btn-group mb-3" role="group" id="modeToggle">

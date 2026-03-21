@@ -721,10 +721,11 @@ body {
 }
 
 /* -- Mode toggle ------------------------------------------------------- */
-#modeToggle .btn-check:checked + .btn-outline-secondary {
-    background: var(--brand-dark);
-    color: #fff;
-    border-color: var(--brand-dark);
+#modeToggle .btn-check:checked + .btn-outline-secondary,
+#modeToggle .btn-check:checked + .btn-outline-secondary:active {
+    background: var(--brand-dark) !important;
+    color: #fff !important;
+    border-color: var(--brand-dark) !important;
 }
 
 /* -- Bulk progress log ------------------------------------------------- */
