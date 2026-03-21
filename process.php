@@ -51,7 +51,7 @@ function sseEvent(string $event, array $data): void
 // --- Validation CSRF (plateforme) ---
 if (defined('PLATFORM_EMBEDDED')) {
     $tokenRecu = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-    if (empty($tokenRecu) || !hash_equals($_SESSION['csrf_token'] ?? '', $tokenRecu)) {
+    if (empty($tokenRecu) || !hash_equals($_SESSION['_csrf_token'] ?? '', $tokenRecu)) {
         sseEvent('error', ['message' => 'Token CSRF invalide.', 'phase' => 'init']);
         exit;
     }
