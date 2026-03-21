@@ -44,7 +44,7 @@ function traduirePage() {
 var formAnalyse = document.getElementById('formAnalyse');
 var urlInput = document.getElementById('urlInput');
 var btnAnalyser = document.getElementById('btnAnalyser');
-var btnToggleFormulaire = document.getElementById('btnToggleFormulaire');
+// btnToggleFormulaire remplacé par config-toggle standard (configBody)
 var progressionWrapper = document.getElementById('progressionWrapper');
 var progressBar = document.getElementById('progressBar');
 var progressPct = document.getElementById('progressPct');
@@ -126,9 +126,9 @@ function lancerAnalyse(url) {
     masquerErreur();
     masquerResultats();
 
-    // Replier le panneau d'aide, afficher progression cote a cote
+    // Cacher le panneau d'aide (colonne entiere), afficher progression cote a cote
     var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.classList.add('help-hidden'); };
+    if (helpPanel) helpPanel.classList.add('d-none');
     var colConfig = document.getElementById('colConfig');
     var colProgression = document.getElementById('colProgression');
     if (colConfig) { colConfig.classList.remove('col-lg-8'); colConfig.classList.add('col-lg-6'); }
@@ -308,11 +308,9 @@ function finirAnalyse() {
     if (colProgression) colProgression.classList.add('d-none');
     if (colConfig) { colConfig.classList.remove('col-lg-6'); colConfig.classList.add('col-lg-8'); }
 
-    // Replier le formulaire et montrer le bouton toggle
-    var collapseEl = document.getElementById('collapseFormulaire');
-    var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-    bsCollapse.hide();
-    btnToggleFormulaire.classList.remove('d-none');
+    // Auto-collapse config
+    var configBody = document.getElementById('configBody');
+    if (configBody) { bootstrap.Collapse.getOrCreateInstance(configBody, {toggle:false}).hide(); }
 }
 
 /* ======================================================================
@@ -1494,9 +1492,9 @@ function lancerAnalyseBulk(urlsTexte) {
     bulkJobId = null;
     bulkCsvUrl = null;
 
-    // Replier le panneau d'aide, afficher progression cote a cote
+    // Cacher le panneau d'aide (colonne entiere), afficher progression cote a cote
     var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) { var _hp = helpPanel.querySelector('.config-help-panel'); if (_hp) _hp.classList.add('help-hidden'); };
+    if (helpPanel) helpPanel.classList.add('d-none');
     var colConfig = document.getElementById('colConfig');
     var colProgression = document.getElementById('colProgression');
     if (colConfig) { colConfig.classList.remove('col-lg-8'); colConfig.classList.add('col-lg-6'); }
@@ -1629,10 +1627,9 @@ function finirAnalyseBulk() {
     if (colProgression) colProgression.classList.add('d-none');
     if (colConfig) { colConfig.classList.remove('col-lg-6'); colConfig.classList.add('col-lg-8'); }
 
-    var collapseEl = document.getElementById('collapseFormulaire');
-    var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-    bsCollapse.hide();
-    btnToggleFormulaire.classList.remove('d-none');
+    // Auto-collapse config
+    var configBody = document.getElementById('configBody');
+    if (configBody) { bootstrap.Collapse.getOrCreateInstance(configBody, {toggle:false}).hide(); }
 }
 
 /* ======================================================================

@@ -4,10 +4,12 @@
     "description": "Compare le HTML brut vs rendu JS pour detecter les dependances JavaScript en SEO",
     "version": "2.0.0",
     "icon": "bi-filetype-html",
+    "illustration": "illustration.svg",
     "entry_point": "index.php",
     "sort_order": 25,
-    "quota_mode": "api_call",
+    "quota_mode": "url",
     "default_quota": 200,
+    "unite_label": "URLs",
     "display_mode": "embedded",
     "env_keys": [
         "BROWSERLESS_API_KEY"
@@ -40,5 +42,6 @@
     ],
     "credits_par_analyse": 1,
     "units_per_credit": 50,
-    "periode_quota": "jour"
+    "periode_quota": "jour",
+    "unites_par_credit": 1
 }

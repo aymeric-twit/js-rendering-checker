@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140">
+  <rect width="200" height="140" fill="#f8fafc"/>
+  <!-- Left panel: Raw HTML -->
+  <g transform="translate(10, 15)">
+    <rect x="0" y="0" width="75" height="110" rx="5" fill="#fff" stroke="#004c4c" stroke-width="2"/>
+    <!-- Title bar -->
+    <rect x="0" y="0" width="75" height="14" rx="5" fill="#004c4c"/>
+    <rect x="0" y="8" width="75" height="6" fill="#004c4c"/>
+    <circle cx="10" cy="7" r="2.5" fill="#dc3545"/>
+    <circle cx="18" cy="7" r="2.5" fill="#fbb03b"/>
+    <circle cx="26" cy="7" r="2.5" fill="#198754"/>
+    <!-- HTML bracket < -->
+    <path d="M22 35 L12 42 L22 49" fill="none" stroke="#66b2b2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- HTML bracket > -->
+    <path d="M40 35 L50 42 L40 49" fill="none" stroke="#66b2b2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Slash -->
+    <line x1="34" y1="33" x2="28" y2="51" stroke="#004c4c" stroke-width="2" stroke-linecap="round"/>
+    <!-- Code lines -->
+    <rect x="8" y="58" width="55" height="3" rx="1.5" fill="#e8f4f4"/>
+    <rect x="14" y="65" width="45" height="3" rx="1.5" fill="#e8f4f4"/>
+    <rect x="14" y="72" width="50" height="3" rx="1.5" fill="#e8f4f4"/>
+    <rect x="8" y="79" width="40" height="3" rx="1.5" fill="#e8f4f4"/>
+    <!-- Curly braces -->
+    <path d="M16 88 Q12 92 16 96" fill="none" stroke="#fbb03b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M55 88 Q59 92 55 96" fill="none" stroke="#fbb03b" stroke-width="2" stroke-linecap="round"/>
+    <rect x="20" y="90" width="32" height="3" rx="1.5" fill="#fbb03b" opacity="0.5"/>
+  </g>
+  <!-- Right panel: Rendered page -->
+  <g transform="translate(115, 15)">
+    <rect x="0" y="0" width="75" height="110" rx="5" fill="#fff" stroke="#66b2b2" stroke-width="2"/>
+    <!-- Title bar -->
+    <rect x="0" y="0" width="75" height="14" rx="5" fill="#66b2b2"/>
+    <rect x="0" y="8" width="75" height="6" fill="#66b2b2"/>
+    <circle cx="10" cy="7" r="2.5" fill="#fff" opacity="0.6"/>
+    <circle cx="18" cy="7" r="2.5" fill="#fff" opacity="0.6"/>
+    <circle cx="26" cy="7" r="2.5" fill="#fff" opacity="0.6"/>
+    <!-- Rendered header -->
+    <rect x="8" y="22" width="35" height="6" rx="2" fill="#004c4c"/>
+    <!-- Rendered image placeholder -->
+    <rect x="8" y="34" width="58" height="25" rx="3" fill="#e8f4f4"/>
+    <circle cx="22" cy="46" r="5" fill="#66b2b2" opacity="0.4"/>
+    <polygon points="32,53 45,40 58,53" fill="#66b2b2" opacity="0.3"/>
+    <!-- Rendered text blocks -->
+    <rect x="8" y="65" width="58" height="3" rx="1.5" fill="#333" opacity="0.3"/>
+    <rect x="8" y="72" width="52" height="3" rx="1.5" fill="#333" opacity="0.3"/>
+    <rect x="8" y="79" width="55" height="3" rx="1.5" fill="#333" opacity="0.3"/>
+    <!-- Rendered button -->
+    <rect x="8" y="90" width="30" height="10" rx="4" fill="#004c4c"/>
+    <rect x="12" y="93" width="22" height="4" rx="2" fill="#e8f4f4"/>
+  </g>
+  <!-- Diff arrows between panels -->
+  <g transform="translate(88, 40)">
+    <!-- Arrow right -->
+    <line x1="0" y1="0" x2="20" y2="0" stroke="#fbb03b" stroke-width="2.5" stroke-linecap="round"/>
+    <polygon points="18,-4 25,0 18,4" fill="#fbb03b"/>
+    <!-- Arrow left -->
+    <line x1="24" y1="12" x2="4" y2="12" stroke="#fbb03b" stroke-width="2.5" stroke-linecap="round"/>
+    <polygon points="6,8 -1,12 6,16" fill="#fbb03b"/>
+  </g>
+  <!-- Diff indicator dots -->
+  <circle cx="100" cy="80" r="3" fill="#dc3545" opacity="0.6"/>
+  <circle cx="100" cy="92" r="3" fill="#198754" opacity="0.6"/>
+  <circle cx="100" cy="104" r="3" fill="#fbb03b" opacity="0.6"/>
+</svg>

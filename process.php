@@ -57,9 +57,9 @@ if (defined('PLATFORM_EMBEDDED')) {
     }
 }
 
-// --- Quota ---
+// --- Quota : vérifier sans déduire (déduction après succès des deux fetch) ---
 if (class_exists('\\Platform\\Module\\Quota')) {
-    if (!\Platform\Module\Quota::trackerSiDisponible('js-rendering-checker')) {
+    if (!\Platform\Module\Quota::creditsDisponibles('js-rendering-checker')) {
         sseEvent('error', ['message' => 'Quota mensuel epuise.', 'phase' => 'init', 'code' => 429]);
         exit;
     }
@@ -147,6 +147,15 @@ if ($renduResultat['status'] === 'unavailable') {
     sseEvent('progress', ['phase' => 'render_done', 'pct' => 66, 'message_fr' => 'HTML rendu obtenu.', 'message_en' => 'Rendered HTML obtained.']);
 }
 
+
+// --- Quota : déduire le crédit maintenant que les deux HTML sont récupérés ---
+if (class_exists('\\Platform\\Module\\Quota') && !$modeRawOnly) {
+    try {
+        \Platform\Module\Quota::track('js-rendering-checker');
+    } catch (\Throwable $e) {
+        // Ne pas bloquer l'analyse si le tracking échoue
+    }
+}
 
 // =========================================================================
 // Phase 3 : Comparaison

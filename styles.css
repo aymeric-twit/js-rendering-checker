@@ -812,6 +812,7 @@ body {
 .config-help-panel li { margin-bottom: 0.35rem; }
 .config-help-panel hr { border-color: rgba(0, 76, 76, 0.1); margin: 0.75rem 0; }
 .help-title { font-weight: 600; color: var(--brand-dark); font-size: 0.9rem; }
+.help-hidden { display: none !important; }
 
 /* -- Raccourci hint ---------------------------------------------------- */
 #raccourciHint {
