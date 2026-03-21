@@ -48,8 +48,8 @@
 
     <div class="row g-4">
 
-    <!-- Colonne principale -->
-    <div class="col-lg-8">
+    <!-- Colonne configuration -->
+    <div class="col-lg-8" id="colConfig">
 
     <!-- Card Configuration -->
     <div class="card mb-4" id="cardFormulaire">
@@ -141,27 +141,30 @@
         </div>
     </div>
 
-    <!-- Progression -->
-    <div id="progressionWrapper" class="card mb-4" style="display: none;">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold small" data-i18n="progress.titre">Analyse en cours</span>
-                <span class="small text-muted" id="progressPct">0%</span>
-            </div>
-            <div class="progress mb-3" style="height: 8px;">
-                <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%; background: var(--brand-teal);"></div>
-            </div>
-            <div id="progressSteps" class="small"></div>
-        </div>
-    </div>
-
     <!-- Info raw-only -->
     <div id="infoRawOnly" class="alert mb-4" style="display: none; background: var(--brand-teal-light); border: 1px solid var(--brand-teal); border-radius: 8px; color: var(--brand-dark);">
         <i class="bi bi-info-circle me-2"></i>
         <span id="infoRawOnlyTexte"></span>
     </div>
 
-    </div><!-- /.col-lg-8 -->
+    </div><!-- /.colConfig -->
+
+    <!-- Colonne progression (cote a cote avec config pendant l'analyse) -->
+    <div class="col-lg-4 d-none" id="colProgression">
+                    <div id="platformCreditsSlot"></div>
+        <div id="progressionWrapper" class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small" data-i18n="progress.titre">Analyse en cours</span>
+                    <span class="small text-muted" id="progressPct">0%</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%; background: var(--brand-teal);"></div>
+                </div>
+                <div id="progressSteps" class="small"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Panneau d'aide -->
     <div class="col-lg-4" id="helpPanel">
