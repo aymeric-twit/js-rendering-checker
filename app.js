@@ -128,7 +128,7 @@ function lancerAnalyse(url) {
 
     // Cacher le mode d'emploi
     var hpInner = document.querySelector('#helpPanel .config-help-panel');
-    if (hpInner) hpInner.classList.add('help-hidden');
+    // helpPanel reste visible
 
     // Afficher progression inline + panneau
     var inlineProgress = document.getElementById('inlineProgress');
@@ -319,7 +319,7 @@ function finirAnalyse() {
 
     // Re-afficher le mode d'emploi
     var hpInner = document.querySelector('#helpPanel .config-help-panel');
-    if (hpInner) hpInner.classList.remove('help-hidden');
+    // helpPanel reste visible
 
     // Replier le formulaire et montrer le bouton toggle
     var collapseEl = document.getElementById('collapseFormulaire');
@@ -414,7 +414,7 @@ function afficherResultats(data) {
 
     // Masquer le panneau d'aide
     var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) { var _chp = helpPanel.querySelector('.config-help-panel'); if (_chp) _chp.classList.add('help-hidden'); };
+    // helpPanel reste visible
 }
 
 function afficherResultatsRawOnly(data) {
@@ -1633,7 +1633,7 @@ function finirAnalyseBulk() {
 
     // Re-afficher le mode d'emploi
     var hpInner = document.querySelector('#helpPanel .config-help-panel');
-    if (hpInner) hpInner.classList.remove('help-hidden');
+    // helpPanel reste visible
 
     var collapseEl = document.getElementById('collapseFormulaire');
     if (collapseEl) {
@@ -1675,7 +1675,7 @@ function afficherResultatsBulk(data) {
 
     // Masquer le panneau d'aide
     var helpPanel = document.getElementById('helpPanel');
-    if (helpPanel) { var _chp = helpPanel.querySelector('.config-help-panel'); if (_chp) _chp.classList.add('help-hidden'); };
+    // helpPanel reste visible
 
     // KPI
     document.getElementById('bulkKpiTotal').textContent = data.total;
