@@ -148,15 +148,6 @@ if ($renduResultat['status'] === 'unavailable') {
 }
 
 
-// --- Quota : déduire le crédit maintenant que les deux HTML sont récupérés ---
-if (class_exists('\\Platform\\Module\\Quota') && !$modeRawOnly) {
-    try {
-        \Platform\Module\Quota::track('js-rendering-checker');
-    } catch (\Throwable $e) {
-        // Ne pas bloquer l'analyse si le tracking échoue
-    }
-}
-
 // =========================================================================
 // Phase 3 : Comparaison
 // =========================================================================
@@ -309,4 +300,13 @@ if ($json === false) {
     echo "event: done\n";
     echo "data: {$json}\n\n";
     flush();
+}
+
+// --- Quota : déduire le crédit APRES envoi des résultats au client ---
+if (class_exists('\\Platform\\Module\\Quota') && !$modeRawOnly) {
+    try {
+        \Platform\Module\Quota::track('js-rendering-checker');
+    } catch (\Throwable $e) {
+        // Ne pas bloquer si le tracking échoue
+    }
 }
