@@ -24,6 +24,18 @@ while (ob_get_level()) {
     ob_end_clean();
 }
 
+// --- Shutdown handler : capturer les erreurs fatales et notifier le client ---
+register_shutdown_function(function (): void {
+    $erreur = error_get_last();
+    if ($erreur !== null && in_array($erreur['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        $message = 'Erreur serveur : ' . $erreur['message'];
+        $json = json_encode(['message' => $message, 'phase' => 'fatal']);
+        $json = str_replace(["\n", "\r"], '', $json);
+        echo "event: error\ndata: {$json}\n\n";
+        flush();
+    }
+});
+
 
 /**
  * Envoie un evenement SSE.
@@ -253,7 +265,7 @@ $detailData = [
 ];
 file_put_contents(
     $detailDir . '/' . $detailFichier,
-    json_encode($detailData, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR)
+    json_encode($detailData, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
 );
 
 // Alleger les zones pour le payload SSE : remplacer les listes par des compteurs
@@ -290,15 +302,28 @@ $payload = [
     'hashRendu'        => !$modeRawOnly ? hash('sha256', $renduResultat['html'] ?? '') : null,
 ];
 
-$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+// Nettoyer l'UTF-8 invalide avant encodage JSON (pages mal encodees)
+$jsonPayload = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
-if ($json === false) {
+if ($jsonPayload === false) {
+    // Fallback : retenter sans les donnees textuelles problematiques
+    $payload['comparaison'] = $comparaison !== null
+        ? array_map(function ($c) {
+            $c['brut'] = is_string($c['brut']) ? mb_convert_encoding($c['brut'], 'UTF-8', 'UTF-8') : $c['brut'];
+            $c['rendu'] = is_string($c['rendu']) ? mb_convert_encoding($c['rendu'], 'UTF-8', 'UTF-8') : $c['rendu'];
+            return $c;
+        }, $comparaison)
+        : null;
+    $jsonPayload = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+}
+
+if ($jsonPayload === false) {
     sseEvent('error', ['message' => 'Erreur JSON : ' . json_last_error_msg(), 'phase' => 'done']);
 } else {
     // Envoyer directement pour eviter la double-encode de sseEvent
-    $json = str_replace(["\n", "\r"], '', $json);
+    $jsonPayload = str_replace(["\n", "\r"], '', $jsonPayload);
     echo "event: done\n";
-    echo "data: {$json}\n\n";
+    echo "data: {$jsonPayload}\n\n";
     flush();
 }
 

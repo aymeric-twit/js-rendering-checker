@@ -173,6 +173,7 @@ function lancerAnalyse(url) {
         var reader = response.body.getReader();
         var decoder = new TextDecoder();
         var buffer = '';
+        var currentEvent = '';
 
         function pump() {
             return reader.read().then(function (result) {
@@ -185,7 +186,6 @@ function lancerAnalyse(url) {
                 var lines = buffer.split('\n');
                 buffer = lines.pop();
 
-                var currentEvent = '';
                 for (var i = 0; i < lines.length; i++) {
                     var line = lines[i];
                     if (line.indexOf('event: ') === 0) {
@@ -196,7 +196,12 @@ function lancerAnalyse(url) {
                             var data = JSON.parse(jsonStr);
                             traiterEvenement(currentEvent, data);
                         } catch (err) {
-                            // ignorer les erreurs de parsing
+                            // Si c'est l'event done qui echoue, afficher l'erreur
+                            if (currentEvent === 'done') {
+                                console.error('Erreur parsing SSE done:', err);
+                                afficherErreur(t('error.analyse_echouee'));
+                                finirAnalyse();
+                            }
                         }
                         currentEvent = '';
                     }
@@ -316,6 +321,11 @@ function finirAnalyse() {
     btnAnalyser.disabled = false;
     btnAnalyser.innerHTML = '<i class="bi bi-play-fill me-1"></i> ' + t('btn.analyser');
     hideInlineProgress();
+
+    // Masquer la progression si aucun resultat n'a ete affiche
+    if (resultats.style.display === 'none' && resultatsRawOnly.style.display === 'none') {
+        progressionWrapper.style.display = 'none';
+    }
 
     // Re-afficher le mode d'emploi
     var hpInner = document.querySelector('#helpPanel .config-help-panel');
@@ -1547,6 +1557,7 @@ function lancerAnalyseBulk(urlsTexte) {
         var reader = response.body.getReader();
         var decoder = new TextDecoder();
         var buffer = '';
+        var currentEvent = '';
 
         function pump() {
             return reader.read().then(function (result) {
@@ -1554,7 +1565,6 @@ function lancerAnalyseBulk(urlsTexte) {
                 buffer += decoder.decode(result.value, { stream: true });
                 var lines = buffer.split('\n');
                 buffer = lines.pop();
-                var currentEvent = '';
                 for (var i = 0; i < lines.length; i++) {
                     var line = lines[i];
                     if (line.indexOf('event: ') === 0) {
