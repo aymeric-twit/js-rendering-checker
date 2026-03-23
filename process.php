@@ -28,8 +28,9 @@ while (ob_get_level()) {
 register_shutdown_function(function (): void {
     $erreur = error_get_last();
     if ($erreur !== null && in_array($erreur['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-        $message = 'Erreur serveur : ' . $erreur['message'];
-        $json = json_encode(['message' => $message, 'phase' => 'fatal']);
+        $messageFr = 'Erreur serveur : ' . $erreur['message'];
+        $messageEn = 'Server error: ' . $erreur['message'];
+        $json = json_encode(['message' => $messageFr, 'message_fr' => $messageFr, 'message_en' => $messageEn, 'phase' => 'fatal']);
         $json = str_replace(["\n", "\r"], '', $json);
         echo "event: error\ndata: {$json}\n\n";
         flush();
@@ -50,7 +51,7 @@ function sseEvent(string $event, array $data): void
     try {
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     } catch (JsonException $e) {
-        $json = json_encode(['message' => 'Erreur encodage JSON : ' . $e->getMessage()]);
+        $json = json_encode(['message' => 'Erreur encodage JSON : ' . $e->getMessage(), 'message_fr' => 'Erreur encodage JSON : ' . $e->getMessage(), 'message_en' => 'JSON encoding error: ' . $e->getMessage()]);
     }
 
     $json = str_replace(["\n", "\r"], '', $json);
@@ -64,7 +65,7 @@ function sseEvent(string $event, array $data): void
 if (defined('PLATFORM_EMBEDDED')) {
     $tokenRecu = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
     if (empty($tokenRecu) || !hash_equals($_SESSION['_csrf_token'] ?? '', $tokenRecu)) {
-        sseEvent('error', ['message' => 'Token CSRF invalide.', 'phase' => 'init']);
+        sseEvent('error', ['message' => 'Token CSRF invalide.', 'message_fr' => 'Token CSRF invalide.', 'message_en' => 'Invalid CSRF token.', 'phase' => 'init']);
         exit;
     }
 }
@@ -72,7 +73,7 @@ if (defined('PLATFORM_EMBEDDED')) {
 // --- Quota : vérifier sans déduire (déduction après succès des deux fetch) ---
 if (class_exists('\\Platform\\Module\\Quota')) {
     if (!\Platform\Module\Quota::creditsDisponibles('js-rendering-checker')) {
-        sseEvent('error', ['message' => 'Quota mensuel epuise.', 'phase' => 'init', 'code' => 429]);
+        sseEvent('error', ['message' => 'Quota mensuel epuise.', 'message_fr' => 'Quota mensuel epuise.', 'message_en' => 'Monthly quota exhausted.', 'phase' => 'init', 'code' => 429]);
         exit;
     }
 }
@@ -85,12 +86,12 @@ $avecScreenshots = !empty($_POST['screenshots']);
 
 // Validation
 if ($url === '') {
-    sseEvent('error', ['message' => 'URL requise.', 'phase' => 'init']);
+    sseEvent('error', ['message' => 'URL requise.', 'message_fr' => 'URL requise.', 'message_en' => 'URL required.', 'phase' => 'init']);
     exit;
 }
 
 if (!valider_url($url)) {
-    sseEvent('error', ['message' => 'URL invalide ou non autorisee (localhost, IPs privees interdites).', 'phase' => 'init']);
+    sseEvent('error', ['message' => 'URL invalide ou non autorisee (localhost, IPs privees interdites).', 'message_fr' => 'URL invalide ou non autorisee (localhost, IPs privees interdites).', 'message_en' => 'Invalid or forbidden URL (localhost, private IPs not allowed).', 'phase' => 'init']);
     exit;
 }
 
@@ -110,7 +111,8 @@ if (connection_aborted()) {
 $brutResultat = fetch_brut($url, $ua);
 
 if ($brutResultat['status'] !== 'ok') {
-    sseEvent('error', ['message' => $brutResultat['error'] ?? 'Erreur fetch brut', 'phase' => 'raw']);
+    $erreurBrut = $brutResultat['error'] ?? 'Erreur fetch brut';
+    sseEvent('error', ['message' => $erreurBrut, 'message_fr' => $erreurBrut, 'message_en' => $brutResultat['error'] ?? 'Raw fetch error', 'phase' => 'raw']);
     exit;
 }
 
@@ -318,7 +320,7 @@ if ($jsonPayload === false) {
 }
 
 if ($jsonPayload === false) {
-    sseEvent('error', ['message' => 'Erreur JSON : ' . json_last_error_msg(), 'phase' => 'done']);
+    sseEvent('error', ['message' => 'Erreur JSON : ' . json_last_error_msg(), 'message_fr' => 'Erreur JSON : ' . json_last_error_msg(), 'message_en' => 'JSON error: ' . json_last_error_msg(), 'phase' => 'done']);
 } else {
     // Envoyer directement pour eviter la double-encode de sseEvent
     $jsonPayload = str_replace(["\n", "\r"], '', $jsonPayload);

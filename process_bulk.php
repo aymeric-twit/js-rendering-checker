@@ -31,7 +31,7 @@ function sseEvent(string $event, array $data): void
     try {
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     } catch (JsonException $e) {
-        $json = json_encode(['message' => 'Erreur encodage JSON']);
+        $json = json_encode(['message' => 'Erreur encodage JSON', 'message_fr' => 'Erreur encodage JSON', 'message_en' => 'JSON encoding error']);
     }
 
     $json = str_replace(["\n", "\r"], '', $json);
@@ -51,7 +51,7 @@ if (random_int(1, 10) === 1) {
 if (defined('PLATFORM_EMBEDDED')) {
     $tokenRecu = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
     if (empty($tokenRecu) || !hash_equals($_SESSION['_csrf_token'] ?? '', $tokenRecu)) {
-        sseEvent('error', ['message' => 'Token CSRF invalide.']);
+        sseEvent('error', ['message' => 'Token CSRF invalide.', 'message_fr' => 'Token CSRF invalide.', 'message_en' => 'Invalid CSRF token.']);
         exit;
     }
 }
@@ -65,7 +65,7 @@ $ua = ($uaType === 'desktop') ? CHROME_DESKTOP_UA : CHROME_MOBILE_UA;
 
 // --- Limite de taille ---
 if (strlen($urlsTexte) > 100000) {
-    sseEvent('error', ['message' => 'Données trop volumineuses (max 100 Ko).']);
+    sseEvent('error', ['message' => 'Données trop volumineuses (max 100 Ko).', 'message_fr' => 'Données trop volumineuses (max 100 Ko).', 'message_en' => 'Data too large (max 100 KB).']);
     exit;
 }
 
@@ -94,7 +94,7 @@ $urlsValides = array_slice($urlsValides, 0, 50);
 $total = count($urlsValides);
 
 if ($total === 0) {
-    sseEvent('error', ['message' => 'Aucune URL valide fournie.']);
+    sseEvent('error', ['message' => 'Aucune URL valide fournie.', 'message_fr' => 'Aucune URL valide fournie.', 'message_en' => 'No valid URL provided.']);
     exit;
 }
 
@@ -139,6 +139,8 @@ for ($i = 0; $i < $total; $i++) {
                 'index' => $i,
                 'url' => $url,
                 'erreur' => 'Quota mensuel epuise.',
+                'erreur_fr' => 'Quota mensuel epuise.',
+                'erreur_en' => 'Monthly quota exhausted.',
             ]);
             $failed++;
             continue;
@@ -154,6 +156,8 @@ for ($i = 0; $i < $total; $i++) {
             'index' => $i,
             'url' => $url,
             'erreur' => sanitiser_erreur($resultat['error'] ?? 'Erreur inconnue'),
+            'erreur_fr' => sanitiser_erreur($resultat['error'] ?? 'Erreur inconnue'),
+            'erreur_en' => sanitiser_erreur($resultat['error'] ?? 'Unknown error'),
         ]);
         $failed++;
         continue;
