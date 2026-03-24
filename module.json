@@ -11,6 +11,7 @@
     "default_quota": 200,
     "unite_label": "URLs",
     "display_mode": "embedded",
+    "crawler_mode": "browserless",
     "env_keys": [
         "BROWSERLESS_API_KEY"
     ],
