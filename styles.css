@@ -861,3 +861,36 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
 }
+
+/* -- Dark mode (plateforme : html[data-theme="dark"]) -------------------- */
+[data-theme="dark"] {
+    --bg-body:        #16161e;
+    --bg-card:        #1e1e2a;
+    --bg-card-alt:    #262636;
+    --border-color:   #2e2e3e;
+    --text-primary:   #d8dce2;
+    --text-secondary: #9ca3b0;
+    --text-muted:     #6b7280;
+    --brand-anthracite: #d8dce2;
+}
+
+[data-theme="dark"] .kpi-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .config-help-panel {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .source-pre {
+    background: #12121a;
+    color: #c8ccd2;
+}
+
+[data-theme="dark"] .badge-identique { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+[data-theme="dark"] .badge-modifie { background: rgba(251, 176, 59, 0.18); color: #fbbf24; }
+[data-theme="dark"] .badge-js-seul { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+[data-theme="dark"] .badge-supprime { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+[data-theme="dark"] .badge-absent { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
