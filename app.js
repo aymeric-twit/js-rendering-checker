@@ -85,6 +85,7 @@ var derniersResultats = null;
    ====================================================================== */
 
 var BASE_URL = window.MODULE_BASE_URL || '.';
+var ASSETS_URL = window.MODULE_BASE_URL ? '/module-assets/js-rendering-checker' : '.';
 
 /* ======================================================================
    Init
@@ -247,8 +248,8 @@ function traiterEvenement(event, data) {
         case 'phase':
             ajouterStepPhase(data);
             if (data.phase === 'screenshots') {
-                if (data.screenshotBrut) screenshotData.brut = BASE_URL + '/' + data.screenshotBrut;
-                if (data.screenshotRendu) screenshotData.rendu = BASE_URL + '/' + data.screenshotRendu;
+                if (data.screenshotBrut) screenshotData.brut = ASSETS_URL + '/' + data.screenshotBrut;
+                if (data.screenshotRendu) screenshotData.rendu = ASSETS_URL + '/' + data.screenshotRendu;
             }
             break;
 
@@ -476,7 +477,7 @@ var detailUrl = null;
 
 function chargerDetails() {
     if (detailsComplets || !detailUrl) return Promise.resolve(detailsComplets);
-    return fetch(BASE_URL + '/' + detailUrl)
+    return fetch(ASSETS_URL + '/' + detailUrl)
         .then(function (r) { return r.json(); })
         .then(function (data) {
             detailsComplets = data;
